@@ -22,8 +22,20 @@ s3_client = session.client(
 
 
 def generate_presigned_upload_url(object_key: str, expiration_minutes: int = 15):
+    print(f"Bucket: {R2_BUCKET}")
+
     return s3_client.generate_presigned_url(
         "put_object",
         Params={"Bucket": R2_BUCKET, "Key": object_key},
         ExpiresIn=expiration_minutes * 60,
+    )
+
+
+def generate_presigned_post(object_key: str, expiration_minutes: int = 15):
+    return s3_client.generate_presigned_post(
+        Bucket=R2_BUCKET,
+        Key=object_key,
+        ExpiresIn=expiration_minutes * 60,
+        Fields=None,
+        Conditions=[{"acl": "private"}, ["starts-with", "$Content-Type", ""]],
     )
