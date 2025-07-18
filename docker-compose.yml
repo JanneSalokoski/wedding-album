@@ -1,11 +1,28 @@
-version: '3.8'
 services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: wedding_album
+      POSTGRES_USER: wedding_album
+      POSTGRES_PASSWORD: wedding_album
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # ports:
+      # - "5432:5432"
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
 
   backend:
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://wedding_album:wedding_album@db/wedding_album
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
+
+volumes:
+  postgres_data:

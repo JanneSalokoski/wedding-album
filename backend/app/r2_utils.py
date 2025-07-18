@@ -2,6 +2,7 @@ import boto3
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
+from botocore.client import Config
 
 load_dotenv()
 
@@ -18,6 +19,8 @@ s3_client = session.client(
     endpoint_url=R2_ENDPOINT,
     aws_access_key_id=R2_ACCESS_KEY,
     aws_secret_access_key=R2_SECRET_KEY,
+    region_name="auto",
+    config=Config(signature_version="s3v4"),
 )
 
 
@@ -38,4 +41,12 @@ def generate_presigned_post(object_key: str, expiration_minutes: int = 15):
         ExpiresIn=expiration_minutes * 60,
         Fields=None,
         Conditions=[{"acl": "private"}, ["starts-with", "$Content-Type", ""]],
+    )
+
+
+def generate_presigned_view_url(object_key: str, expiration_minutes: int = 60):
+    return s3_client.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": R2_BUCKET, "Key": object_key},
+        ExpiresIn=expiration_minutes * 60,
     )
