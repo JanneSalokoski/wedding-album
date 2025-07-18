@@ -15,6 +15,7 @@ function PhotoFeed() {
     const [hasMore, setHasMore] = useState(true);
     const observerRef = useRef<HTMLDivElement | null>(null);
 
+    const seenIds = useRef(new Set<number>());
     const loadPhotos = useCallback(async () => {
         if (!hasMore) {
             return;
@@ -22,7 +23,11 @@ function PhotoFeed() {
 
         const res = await fetch(`/api/photos?limit=20&offset=${offset}`)
         const newPhotos: Photo[] = await res.json()
-        setPhotos((prev) => [...prev, ...newPhotos])
+
+        const filtered = newPhotos.filter(photo => !seenIds.current.has(photo.id))
+        filtered.forEach(photo => seenIds.current.add(photo.id))
+        setPhotos(prev => [...prev, ...filtered])
+
         setOffset((prev) => prev + newPhotos.length)
 
         if (newPhotos.length < 20) {
