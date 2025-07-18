@@ -1,7 +1,13 @@
 from sqlmodel import SQLModel, create_engine, Session
-import os
+from os import getenv
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = (
+    f"postgresql+psycopg2://{getenv('POSTGRES_USER')}:"
+    f"{getenv('POSTGRES_PASSWORD')}@"
+    f"{getenv('POSTGRES_HOST')}:{getenv('POSTGRES_PORT')}/"
+    f"{getenv('POSTGRES_DB')}"
+)
+
 engine = create_engine(DATABASE_URL, echo=True)
 
 

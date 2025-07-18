@@ -1,8 +1,16 @@
-FROM node:latest AS frontend
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-COPY . .
-
+# Install dependencies
+COPY package*.json ./
 RUN npm install
+
+# Copy source and build
+COPY . .
 RUN npm run build
+
+# Final stage (no runtime needed, just outputs files)
+FROM alpine AS final
+WORKDIR /app
+COPY --from=builder /app/dist ./
