@@ -2,6 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import './App.css';
 
+interface Photo {
+    id: number;
+    url: string;
+    uploaded_at: string;
+}
+
 interface LazyImageProps {
     src: string;
     alt?: string;
@@ -54,58 +60,27 @@ function LazyImage({ src, alt = '', className, style }: LazyImageProps) {
     )
 }
 
-interface Photo {
-    id: number;
-    key: string;
-    url: string;
-    uploaded_at: string;
+interface PhotoFeedProps {
+    photos: Photo[]
+    loadMore: () => void
+    hasMore: boolean
 }
 
-function PhotoFeed() {
-    const [photos, setPhotos] = useState<Photo[]>([]);
-    const [offset, setOffset] = useState(0);
-    const [hasMore, setHasMore] = useState(true);
-    const observerRef = useRef<HTMLDivElement | null>(null);
-
-    const seenIds = useRef(new Set<number>());
-    const loadPhotos = useCallback(async () => {
-        if (!hasMore) {
-            return;
-        }
-
-        const res = await fetch(`/api/photos?limit=20&offset=${offset}`)
-        const newPhotos: Photo[] = await res.json()
-
-        const filtered = newPhotos.filter(photo => !seenIds.current.has(photo.id))
-        filtered.forEach(photo => seenIds.current.add(photo.id))
-        setPhotos(prev => [...prev, ...filtered])
-
-        setOffset((prev) => prev + newPhotos.length)
-
-        if (newPhotos.length < 20) {
-            setHasMore(false)
-        }
-    }, [offset, hasMore]);
-
-    useEffect(() => {
-        loadPhotos()
-    }, [])
+function PhotoFeed({ photos, loadMore, hasMore }: PhotoFeedProps) {
+    const observerRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
                 if (entries[0].isIntersecting) {
-                    loadPhotos();
+                    loadMore()
                 }
             },
             { threshold: 1 }
         )
-        if (observerRef.current) {
-            observer.observe(observerRef.current)
-        }
-
+        if (observerRef.current) observer.observe(observerRef.current)
         return () => observer.disconnect()
-    }, [loadPhotos])
+    }, [loadMore])
 
     return (
         <>
@@ -114,44 +89,35 @@ function PhotoFeed() {
                 gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
                 gap: '1rem'
             }}>
-                {photos.map((photo) => (
+                {photos.map(photo => (
                     <LazyImage
                         key={photo.id}
                         src={photo.url}
                         alt={`Photo ${photo.id}`}
-                        style={{ aspectRatio: "1/1", borderRadius: "0.5rem" }}
+                        style={{ aspectRatio: "1 / 1", borderRadius: "0.5rem" }}
                     />
                 ))}
             </div>
             {hasMore && <div ref={observerRef} style={{ height: '1px' }} />}
         </>
-    )
-
+    );
 }
 
-function UploadForm() {
+interface UploadFormProps {
+    onSuccess?: () => void
+}
+
+function UploadForm({ onSuccess }: UploadFormProps) {
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<string | null>(null);
 
-    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-        if (e.target.files?.[0]) {
-            setFile(e.target.files[0]);
-        }
-    }
-
-
     async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
-
-        if (!file) {
-            return;
-        }
+        if (!file) return;
 
         setStatus("Uploading to R2...");
-
-        // Build FormData
         const formData = new FormData();
-        formData.append("file", file);  // actual image
+        formData.append("file", file);
 
         const res = await fetch("/api/upload-file", {
             method: "POST",
@@ -159,41 +125,69 @@ function UploadForm() {
         });
 
         const data = await res.json();
-
         if (res.ok) {
-            setStatus(`✅ Uploaded as ${data.key}`);
+            setStatus(`Uploaded as ${data.key}`);
+            setFile(null);
+            onSuccess?.();
         } else {
             setStatus("❌ Upload failed");
         }
-
-        console.log(data);
     }
-
 
     return (
         <form className="UploadForm" onSubmit={handleUpload}>
             <h2>Upload Photo</h2>
             <label className="form-field" htmlFor="file">
                 <span className="form-label">Upload an image</span>
-                <input type="file" accept="image/*" onChange={handleFileChange} />
+                <input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
             </label>
             <button type="submit" disabled={!file}>Upload</button>
-            {
-                status && (
-                    <div className="status">
-                        {status}
-                    </div>
-                )
-            }
+            {status && <div className="status">{status}</div>}
         </form>
     )
 }
 
 export function App() {
+    const [photos, setPhotos] = useState<Photo[]>([]);
+    const seenIds = useRef(new Set<number>());
+    const [offset, setOffset] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+
+    const loadPhotos = useCallback(async () => {
+        if (!hasMore) return;
+        const res = await fetch(`/api/photos?limit=20&offset=${offset}`);
+        const newPhotos: Photo[] = await res.json();
+
+        const filtered = newPhotos.filter(photo => !seenIds.current.has(photo.id));
+        filtered.forEach(photo => seenIds.current.add(photo.id));
+
+        setPhotos(prev => [...prev, ...filtered]);
+        setOffset(prev => prev + newPhotos.length);
+        if (newPhotos.length < 20) setHasMore(false);
+    }, [offset, hasMore]);
+
+    const resetPhotos = async () => {
+        // Clear and fully reload the feed
+        seenIds.current.clear();
+        setPhotos([]);
+        setOffset(0);
+        setHasMore(true);
+        const res = await fetch(`/api/photos?limit=20&offset=0`);
+        const newPhotos: Photo[] = await res.json();
+        newPhotos.forEach(p => seenIds.current.add(p.id));
+        setPhotos(newPhotos);
+        setOffset(newPhotos.length);
+        if (newPhotos.length < 20) setHasMore(false);
+    };
+
     return (
         <div className="App">
-            <UploadForm />
-            <PhotoFeed />
+            <UploadForm onSuccess={resetPhotos} />
+            <PhotoFeed
+                photos={photos}
+                loadMore={loadPhotos}
+                hasMore={hasMore}
+            />
         </div>
-    )
+    );
 }
