@@ -13,4 +13,5 @@ class Photo(SQLModel, table=True):
 class PhotoRead(SQLModel):
     id: int
     key: str
+    url: str
     uploaded_at: datetime

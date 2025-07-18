@@ -1,5 +1,10 @@
 from fastapi import FastAPI, UploadFile, File, Depends, Query
-from app.r2_utils import generate_presigned_post, s3_client, R2_BUCKET
+from app.r2_utils import (
+    generate_presigned_post,
+    generate_presigned_view_url,
+    s3_client,
+    R2_BUCKET,
+)
 from uuid import uuid4
 from sqlmodel import SQLModel, Session, select
 from app.database import engine, get_session
@@ -44,9 +49,16 @@ def list_photos(
     offset: int = Query(0, ge=0),
     session: Session = Depends(get_session),
 ):
-    statement = (
+    photos = session.exec(
         select(Photo).order_by(Photo.uploaded_at.desc()).offset(offset).limit(limit)
-    )
-    results = session.exec(statement).all()
+    ).all()
 
-    return results
+    return [
+        {
+            "id": photo.id,
+            "key": photo.key,
+            "uploaded_at": photo.uploaded_at,
+            "url": generate_presigned_view_url(photo.key),
+        }
+        for photo in photos
+    ]
