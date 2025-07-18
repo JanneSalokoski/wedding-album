@@ -150,6 +150,7 @@ function UploadForm({ onSuccess }: UploadFormProps) {
 export function App() {
     const [photos, setPhotos] = useState<Photo[]>([]);
     const seenIds = useRef(new Set<number>());
+    const maxId = useRef<number>(0);
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
 
@@ -161,28 +162,30 @@ export function App() {
         const filtered = newPhotos.filter(photo => !seenIds.current.has(photo.id));
         filtered.forEach(photo => seenIds.current.add(photo.id));
 
-        setPhotos(prev => [...prev, ...filtered]);
-        setOffset(prev => prev + newPhotos.length);
-        if (newPhotos.length < 20) setHasMore(false);
+        if (filtered.length > 0) {
+            maxId.current = Math.max(maxId.current, ...filtered.map(p => p.id))
+            setPhotos(prev => [...prev, ...filtered]);
+            setOffset(prev => prev + newPhotos.length);
+            if (newPhotos.length < 20) setHasMore(false);
+        }
     }, [offset, hasMore]);
 
-    const resetPhotos = async () => {
-        // Clear and fully reload the feed
-        seenIds.current.clear();
-        setPhotos([]);
-        setOffset(0);
-        setHasMore(true);
+    const loadLatestPhotos = async () => {
         const res = await fetch(`/api/photos?limit=20&offset=0`);
         const newPhotos: Photo[] = await res.json();
-        newPhotos.forEach(p => seenIds.current.add(p.id));
-        setPhotos(newPhotos);
-        setOffset(newPhotos.length);
-        if (newPhotos.length < 20) setHasMore(false);
+
+        const freshPhotos = newPhotos.filter(p => !seenIds.current.has(p.id));
+        freshPhotos.forEach(p => seenIds.current.add(p.id));
+
+        if (freshPhotos.length > 0) {
+            maxId.current = Math.max(maxId.current, ...freshPhotos.map(p => p.id))
+            setPhotos(prev => [...freshPhotos, ...prev]);
+        }
     };
 
     return (
         <div className="App">
-            <UploadForm onSuccess={resetPhotos} />
+            <UploadForm onSuccess={loadLatestPhotos} />
             <PhotoFeed
                 photos={photos}
                 loadMore={loadPhotos}
