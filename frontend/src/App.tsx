@@ -2,6 +2,58 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import './App.css';
 
+interface LazyImageProps {
+    src: string;
+    alt?: string;
+    className?: string;
+    style?: React.CSSProperties;
+}
+
+function LazyImage({ src, alt = '', className, style }: LazyImageProps) {
+    const [loaded, setLoaded] = useState(false)
+
+    return (
+        <div className={className}
+            style={{
+                position: 'relative',
+                overflow: 'hidden',
+                background: '#eee',
+                ...style,
+            }}
+        >
+            {
+                !loaded && (
+                    <div
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            zIndex: 1,
+                        }}
+                    >
+                        <div className="spinner" />
+                    </div>
+                )
+            }
+            <img
+                src={src}
+                alt={alt}
+                onLoad={() => setLoaded(true)}
+                style={{
+                    display: 'block',
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    opacity: loaded ? 1 : 0,
+                    transition: 'opacity 0.3s ease-in-out',
+                }}
+            />
+        </div>
+    )
+}
+
 interface Photo {
     id: number;
     key: string;
@@ -63,11 +115,11 @@ function PhotoFeed() {
                 gap: '1rem'
             }}>
                 {photos.map((photo) => (
-                    <img
+                    <LazyImage
                         key={photo.id}
                         src={photo.url}
                         alt={`Photo ${photo.id}`}
-                        style={{ width: '100%', borderRadius: '0.5rem' }}
+                        style={{ aspectRatio: "1/1", borderRadius: "0.5rem" }}
                     />
                 ))}
             </div>
