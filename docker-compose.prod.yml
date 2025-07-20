@@ -4,6 +4,12 @@ services:
     env_file: .env.prod
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db_healthcheck.sh:/usr/local/bin/db_healthcheck.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "db_healthcheck.sh"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
 
   frontend:
     build:
@@ -20,7 +26,8 @@ services:
     expose:
       - 8000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   nginx:
     image: nginx:alpine
