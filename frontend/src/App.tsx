@@ -108,16 +108,16 @@ interface UploadFormProps {
 }
 
 function UploadForm({ onSuccess }: UploadFormProps) {
-    const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<FileList | null>(null);
     const [status, setStatus] = useState<string | null>(null);
 
     async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        if (!file) return;
+        if (!files) return;
 
         setStatus("Uploading to R2...");
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", files[0]);
 
         const res = await fetch("/api/upload-file", {
             method: "POST",
@@ -127,10 +127,10 @@ function UploadForm({ onSuccess }: UploadFormProps) {
         const data = await res.json();
         if (res.ok) {
             setStatus(`Uploaded as ${data.key}`);
-            setFile(null);
+            setFiles(null);
             onSuccess?.();
         } else {
-            setStatus("❌ Upload failed");
+            setStatus("Upload failed");
         }
     }
 
@@ -139,9 +139,27 @@ function UploadForm({ onSuccess }: UploadFormProps) {
             <h2>Upload Photo</h2>
             <label className="form-field" htmlFor="file">
                 <span className="form-label">Upload an image</span>
-                <input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
+                <input type="file"
+                    accept="image/*"
+                    multiple={true}
+                    onChange={e => setFiles(e.target.files ?? null)}
+                />
             </label>
-            <button type="submit" disabled={!file}>Upload</button>
+
+            <ol className="CandidatePhotos">
+                {Array.from(files ?? []).map(file => (
+                    <li className="CandidatePhoto">
+                        <img className="preview" src={URL.createObjectURL(file)} alt={file.name} />
+                        <ul className="file-info">
+                            <li className="filename">Filename: {file.name}</li>
+                            <li className="filesize">Size: {Math.round(file.size / 1024)}Kb</li>
+                            <li className="status">Status: ok</li>
+                        </ul>
+                    </li>
+                ))}
+            </ol>
+
+            <button type="submit" disabled={!files}>Upload</button>
             {status && <div className="status">{status}</div>}
         </form>
     )
