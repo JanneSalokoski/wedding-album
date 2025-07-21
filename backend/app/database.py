@@ -8,6 +8,11 @@ DATABASE_URL = (
     f"{getenv('POSTGRES_DB')}"
 )
 
+print("DEBUG DATABASE_URL:", DATABASE_URL)
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set")
+
 engine = create_engine(DATABASE_URL, echo=True)
 
 
