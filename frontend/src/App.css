@@ -12,3 +12,28 @@
         transform: rotate(360deg);
     }
 }
+
+.CandidatePhotos {
+    display: grid;
+    gap: var(--gap);
+    padding: var(--gap);
+
+    list-style-type: none;
+}
+
+.CandidatePhoto {
+    padding: var(--gap);
+
+    border: 1px solid gray;
+
+    img.preview {
+        width: 10rem;
+        height: 10rem;
+    }
+
+    ul.file-info {
+        list-style-type: none;
+    }
+
+
+}
