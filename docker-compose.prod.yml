@@ -39,7 +39,15 @@ services:
     depends_on:
       - frontend
       - backend
+    networks:
+      - default
+      - shared-net
 
 volumes:
   frontend_build:
   postgres_data:
+
+networks:
+        default:
+        shared-net:
+                external: true
