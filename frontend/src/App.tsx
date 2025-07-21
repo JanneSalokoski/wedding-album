@@ -116,9 +116,16 @@ interface UploadFormProps {
 }
 
 function UploadForm({ onSuccess }: UploadFormProps) {
+    type UploadStatus =
+        | { type: "pending" }
+        | { type: "uploading" }
+        | { type: "uploaded"; key: string }
+        | { type: "error"; message: string }
+
     const [files, setFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-    const [statusMessages, setStatusMessages] = useState<(string | null)[]>([]);
+    const [statusMessages, setStatusMessages] = useState<UploadStatus[]>([]);
+    const [globalStatus, setGlobalStatus] = useState<"idle" | "uploading" | "done">("idle");
 
     useEffect(() => {
         if (!files) {
@@ -126,7 +133,7 @@ function UploadForm({ onSuccess }: UploadFormProps) {
             return;
         }
 
-        setStatusMessages(Array(files.length).fill(null));
+        setStatusMessages(Array(files.length).fill({ type: "pending" }));
 
         const urls = Array.from(files).map(file => URL.createObjectURL(file));
         setPreviewUrls(urls);
@@ -136,20 +143,36 @@ function UploadForm({ onSuccess }: UploadFormProps) {
         }
     }, [files]);
 
-    async function setStatus(idx: number, message: string) {
+    useEffect(() => {
+        if (globalStatus === "done") {
+            const timeout = setTimeout(() => {
+                setFiles([]);
+                setPreviewUrls([]);
+                setStatusMessages([]);
+                setGlobalStatus("idle");
+            }, 3000);
+
+            return () => clearTimeout(timeout);
+        }
+    }, [globalStatus]);
+
+    async function setStatus(idx: number, status: UploadStatus) {
         setStatusMessages(prev =>
-            prev.map((msg, index) => (idx === index) ? message : msg)
+            prev.map((s, i) => (i === idx) ? status : s)
         );
     }
 
 
     function handleUploads(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
+
+        setGlobalStatus("uploading");
+
         files.forEach((file, idx) => handleUpload(file, idx))
     }
 
     async function handleUpload(file: File, idx: number) {
-        setStatus(idx, "Uploading...");
+        setStatus(idx, { type: "uploading" });
         const formData = new FormData();
         formData.append("file", file);
 
@@ -161,13 +184,29 @@ function UploadForm({ onSuccess }: UploadFormProps) {
 
             const data = await res.json();
             if (res.ok) {
-                setStatus(idx, `Uploaded as ${data.key}`);
+                setStatus(idx, { type: "uploaded", key: data.key });
             } else {
-                setStatus(idx, "Upload failed");
+                setStatus(idx, { type: "error", message: "Upload failed" });
             }
         } catch (err) {
-            setStatus(idx, "Upload error");
+            setStatus(idx, { type: "error", message: "Network error" });
         }
+
+        setStatusMessages((prev) => {
+            const next = [...prev];
+            next[idx] = next[idx]; // ensure reactivity
+
+            const doneCount = next.filter(
+                (s) => s?.type === "uploaded" || s?.type === "error"
+            ).length;
+
+            if (doneCount === files.length) {
+                setGlobalStatus("done");
+                onSuccess?.();
+            }
+
+            return next;
+        });
 
         onSuccess?.();
     }
@@ -195,14 +234,38 @@ function UploadForm({ onSuccess }: UploadFormProps) {
                         <ul className="file-info">
                             <li className="filename">Filename: {file.name}</li>
                             <li className="filesize">Size: {formatFileSize(file.size)}</li>
-                            <li className="status">Status: {statusMessages[idx]}</li>
+                            <li className="status">
+                                Status: {
+                                    (() => {
+                                        const status = statusMessages[idx];
+
+                                        if (!status) {
+                                            return "Pending";
+                                        }
+
+                                        switch (status.type) {
+                                            case "pending": return "Pending";
+                                            case "uploading": return "Uploading...";
+                                            case "uploaded": return `Uploaded as ${status.key}`;
+                                            case "error": return `Error: ${status.message}`;
+                                        }
+                                    })()
+                                }
+                            </li>
                         </ul>
                         <button type="button" onClick={() => removeFile(idx)}>Remove</button>
                     </li>
                 ))}
             </ol>
 
-            <button type="submit" disabled={!files || files.length === 0}>Upload</button>
+            <button type="submit" disabled={!files || files.length === 0 || globalStatus !== "idle"}>Upload</button>
+
+            {globalStatus === "done" && (
+                <div className="global-status success">All files uploaded</div>
+            )}
+            {globalStatus === "uploading" && (
+                <div className="global-status">Uploading...</div>
+            )}
         </form>
     )
 }
