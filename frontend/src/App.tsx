@@ -109,7 +109,22 @@ interface UploadFormProps {
 
 function UploadForm({ onSuccess }: UploadFormProps) {
     const [files, setFiles] = useState<FileList | null>(null);
+    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [status, setStatus] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!files) {
+            setPreviewUrls([]);
+            return;
+        }
+
+        const urls = Array.from(files).map(file => URL.createObjectURL(file));
+        setPreviewUrls(urls);
+
+        return () => {
+            urls.forEach(url => URL.revokeObjectURL(url));
+        }
+    }, [files]);
 
     async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -147,9 +162,9 @@ function UploadForm({ onSuccess }: UploadFormProps) {
             </label>
 
             <ol className="CandidatePhotos">
-                {Array.from(files ?? []).map(file => (
-                    <li className="CandidatePhoto">
-                        <img className="preview" src={URL.createObjectURL(file)} alt={file.name} />
+                {Array.from(files ?? []).map((file, idx) => (
+                    <li key={file.name} className="CandidatePhoto">
+                        <img className="preview" src={previewUrls[idx]} alt={file.name} />
                         <ul className="file-info">
                             <li className="filename">Filename: {file.name}</li>
                             <li className="filesize">Size: {Math.round(file.size / 1024)}Kb</li>
