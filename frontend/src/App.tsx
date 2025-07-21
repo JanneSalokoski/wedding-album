@@ -116,6 +116,8 @@ interface UploadFormProps {
 }
 
 function UploadForm({ onSuccess }: UploadFormProps) {
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
     type UploadStatus =
         | { type: "pending" }
         | { type: "uploading" }
@@ -133,7 +135,13 @@ function UploadForm({ onSuccess }: UploadFormProps) {
             return;
         }
 
-        setStatusMessages(Array(files.length).fill({ type: "pending" }));
+        const statuses = files.map(file => {
+            if (file.size > MAX_FILE_SIZE) {
+                return { type: "error", message: "File too large" } as UploadStatus;
+            }
+            return { type: "pending" } as UploadStatus;
+        });
+        setStatusMessages(statuses);
 
         const urls = Array.from(files).map(file => URL.createObjectURL(file));
         setPreviewUrls(urls);
@@ -168,7 +176,15 @@ function UploadForm({ onSuccess }: UploadFormProps) {
 
         setGlobalStatus("uploading");
 
-        files.forEach((file, idx) => handleUpload(file, idx))
+        files.forEach((file, idx) => {
+            const status = statusMessages[idx];
+
+            if (status.type === "error") {
+                return;
+            }
+
+            handleUpload(file, idx);
+        })
     }
 
     async function handleUpload(file: File, idx: number) {
@@ -215,6 +231,11 @@ function UploadForm({ onSuccess }: UploadFormProps) {
         setFiles(prev => prev.filter((_, i) => i !== index));
     }
 
+    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const selectedFiles = Array.from(e.target.files ?? []);
+        setFiles(selectedFiles);
+    }
+
     return (
         <form className="UploadForm" onSubmit={handleUploads}>
             <h2>Upload Photos</h2>
@@ -223,7 +244,7 @@ function UploadForm({ onSuccess }: UploadFormProps) {
                 <input type="file"
                     accept="image/*"
                     multiple={true}
-                    onChange={e => setFiles(Array.from(e.target.files ?? []))}
+                    onChange={handleFileChange}
                 />
             </label>
 
