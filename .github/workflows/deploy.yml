@@ -2,7 +2,7 @@ name: Deploy staging to VPS
 
 on:
   push:
-    branches: [main, staging-env]
+    branches: [main, feature/staging-env]
 
 jobs:
   deploy:
