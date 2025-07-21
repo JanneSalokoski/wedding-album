@@ -1,0 +1,45 @@
+name: Deploy staging to VPS
+
+on:
+  push:
+    branches: [staging]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker images with Compose
+      run: |
+        docker compose -f docker-compose.prod.yml build frontend backend
+
+    - name: Save Docker images as tarball
+      run: |
+        docker save wedding-album-staging-frontend wedding-album-staging-backend | gzip > wedding-album.tar.gz
+
+    - name: Copy tarball to VPS
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        source: wedding-album.tar.gz
+        target: ${{ secrets.VPS_PROJECT_DIR }}
+
+    - name: Load images and restart services on VPS
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        script: |
+          cd ${{ secrets.VPS_PROJECT_DIR }}
+          docker load < wedding-album.tar.gz
+          docker compose -f docker-compose.prod.yml up -d --no-deps frontend backend
+
