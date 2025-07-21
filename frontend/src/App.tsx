@@ -118,13 +118,15 @@ interface UploadFormProps {
 function UploadForm({ onSuccess }: UploadFormProps) {
     const [files, setFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-    const [status, setStatus] = useState<string | null>(null);
+    const [statusMessages, setStatusMessages] = useState<(string | null)[]>([]);
 
     useEffect(() => {
         if (!files) {
             setPreviewUrls([]);
             return;
         }
+
+        setStatusMessages(Array(files.length).fill(null));
 
         const urls = Array.from(files).map(file => URL.createObjectURL(file));
         setPreviewUrls(urls);
@@ -134,27 +136,40 @@ function UploadForm({ onSuccess }: UploadFormProps) {
         }
     }, [files]);
 
-    async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
+    async function setStatus(idx: number, message: string) {
+        setStatusMessages(prev =>
+            prev.map((msg, index) => (idx === index) ? message : msg)
+        );
+    }
+
+
+    function handleUploads(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        if (!files) return;
+        files.forEach((file, idx) => handleUpload(file, idx))
+    }
 
-        setStatus("Uploading to R2...");
+    async function handleUpload(file: File, idx: number) {
+        setStatus(idx, "Uploading...");
         const formData = new FormData();
-        formData.append("file", files[0]);
+        formData.append("file", file);
 
-        const res = await fetch("/api/upload-file", {
-            method: "POST",
-            body: formData,
-        });
+        try {
+            const res = await fetch("/api/upload-file", {
+                method: "POST",
+                body: formData,
+            });
 
-        const data = await res.json();
-        if (res.ok) {
-            setStatus(`Uploaded as ${data.key}`);
-            setFiles([]);
-            onSuccess?.();
-        } else {
-            setStatus("Upload failed");
+            const data = await res.json();
+            if (res.ok) {
+                setStatus(idx, `Uploaded as ${data.key}`);
+            } else {
+                setStatus(idx, "Upload failed");
+            }
+        } catch (err) {
+            setStatus(idx, "Upload error");
         }
+
+        onSuccess?.();
     }
 
     function removeFile(index: number) {
@@ -162,7 +177,7 @@ function UploadForm({ onSuccess }: UploadFormProps) {
     }
 
     return (
-        <form className="UploadForm" onSubmit={handleUpload}>
+        <form className="UploadForm" onSubmit={handleUploads}>
             <h2>Upload Photo</h2>
             <label className="form-field" htmlFor="file">
                 <span className="form-label">Upload an image</span>
@@ -180,7 +195,7 @@ function UploadForm({ onSuccess }: UploadFormProps) {
                         <ul className="file-info">
                             <li className="filename">Filename: {file.name}</li>
                             <li className="filesize">Size: {formatFileSize(file.size)}</li>
-                            <li className="status">Status: ok</li>
+                            <li className="status">Status: {statusMessages[idx]}</li>
                         </ul>
                         <button type="button" onClick={() => removeFile(idx)}>Remove</button>
                     </li>
@@ -188,7 +203,6 @@ function UploadForm({ onSuccess }: UploadFormProps) {
             </ol>
 
             <button type="submit" disabled={!files || files.length === 0}>Upload</button>
-            {status && <div className="status">{status}</div>}
         </form>
     )
 }
