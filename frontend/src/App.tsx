@@ -2,6 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 import './App.css';
 
+function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    const mb = kb / 1024;
+    return `${mb.toFixed(1)} MB`;
+}
+
 interface Photo {
     id: number;
     url: string;
@@ -167,7 +175,7 @@ function UploadForm({ onSuccess }: UploadFormProps) {
                         <img className="preview" src={previewUrls[idx]} alt={file.name} />
                         <ul className="file-info">
                             <li className="filename">Filename: {file.name}</li>
-                            <li className="filesize">Size: {Math.round(file.size / 1024)}Kb</li>
+                            <li className="filesize">Size: {formatFileSize(file.size)}</li>
                             <li className="status">Status: ok</li>
                         </ul>
                     </li>
