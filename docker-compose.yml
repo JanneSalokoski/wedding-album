@@ -7,8 +7,8 @@ services:
       POSTGRES_PASSWORD: wedding_album
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # ports:
-      # - "5432:5432"
+    ports:
+      - "5432:5432"
 
   frontend:
     build:
@@ -19,7 +19,11 @@ services:
     depends_on:
       - db
     environment:
-      - DATABASE_URL=postgresql+psycopg2://wedding_album:wedding_album@db/wedding_album
+      POSTGRES_DB: wedding_album
+      POSTGRES_HOST: db
+      POSTGRES_USER: wedding_album
+      POSTGRES_PORT: 5432
+      POSTGRES_PASSWORD: wedding_album
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
