@@ -176,15 +176,18 @@ function UploadForm({ onSuccess }: UploadFormProps) {
 
         setGlobalStatus("uploading");
 
-        files.forEach((file, idx) => {
-            const status = statusMessages[idx];
+        const uploadableIndexes = statusMessages
+            .map((status, idx) => status.type !== "error" ? idx : null)
+            .filter((i): i is number => i !== null);
 
-            if (status.type === "error") {
-                return;
-            }
+        if (uploadableIndexes.length === 0) {
+            setGlobalStatus("done");
+            return;
+        }
 
-            handleUpload(file, idx);
-        })
+        uploadableIndexes.forEach(idx => {
+            handleUpload(files[idx], idx);
+        });
     }
 
     async function handleUpload(file: File, idx: number) {
@@ -223,8 +226,6 @@ function UploadForm({ onSuccess }: UploadFormProps) {
 
             return next;
         });
-
-        onSuccess?.();
     }
 
     function removeFile(index: number) {
