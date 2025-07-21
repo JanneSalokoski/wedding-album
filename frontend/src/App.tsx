@@ -217,9 +217,9 @@ function UploadForm({ onSuccess }: UploadFormProps) {
 
     return (
         <form className="UploadForm" onSubmit={handleUploads}>
-            <h2>Upload Photo</h2>
+            <h2>Upload Photos</h2>
             <label className="form-field" htmlFor="file">
-                <span className="form-label">Upload an image</span>
+                <span className="form-label">Select photos to upload</span>
                 <input type="file"
                     accept="image/*"
                     multiple={true}
