@@ -116,7 +116,7 @@ interface UploadFormProps {
 }
 
 function UploadForm({ onSuccess }: UploadFormProps) {
-    const [files, setFiles] = useState<FileList | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [status, setStatus] = useState<string | null>(null);
 
@@ -150,11 +150,15 @@ function UploadForm({ onSuccess }: UploadFormProps) {
         const data = await res.json();
         if (res.ok) {
             setStatus(`Uploaded as ${data.key}`);
-            setFiles(null);
+            setFiles([]);
             onSuccess?.();
         } else {
             setStatus("Upload failed");
         }
+    }
+
+    function removeFile(index: number) {
+        setFiles(prev => prev.filter((_, i) => i !== index));
     }
 
     return (
@@ -165,7 +169,7 @@ function UploadForm({ onSuccess }: UploadFormProps) {
                 <input type="file"
                     accept="image/*"
                     multiple={true}
-                    onChange={e => setFiles(e.target.files ?? null)}
+                    onChange={e => setFiles(Array.from(e.target.files ?? []))}
                 />
             </label>
 
@@ -178,11 +182,12 @@ function UploadForm({ onSuccess }: UploadFormProps) {
                             <li className="filesize">Size: {formatFileSize(file.size)}</li>
                             <li className="status">Status: ok</li>
                         </ul>
+                        <button type="button" onClick={() => removeFile(idx)}>Remove</button>
                     </li>
                 ))}
             </ol>
 
-            <button type="submit" disabled={!files}>Upload</button>
+            <button type="submit" disabled={!files || files.length === 0}>Upload</button>
             {status && <div className="status">{status}</div>}
         </form>
     )
