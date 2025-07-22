@@ -1,6 +1,6 @@
 export async function sendLike(photoId: number) {
     try {
-        const res = await fetch(`/api/likes?id=${photoId}`, {
+        const res = await fetch(`/api/likes/${photoId}`, {
             method: "POST",
         });
 

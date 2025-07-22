@@ -1,6 +1,6 @@
 export async function sendView(photoId: number) {
     try {
-        const res = await fetch(`/api/views?id=${photoId}`, {
+        const res = await fetch(`/api/views/${photoId}`, {
             method: "POST",
         });
 

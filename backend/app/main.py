@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Depends, Query
+from fastapi import FastAPI, UploadFile, File, Depends, Query, HTTPException
 from app.r2_utils import (
     generate_presigned_post,
     generate_presigned_view_url,
@@ -83,3 +83,47 @@ def list_photos(
         }
         for photo in photos
     ]
+
+
+@app.post("/views/{photo_id}")
+def view_photo(photo_id: int, session: Session = Depends(get_session)):
+    photo = session.exec(select(Photo).where(Photo.id == photo_id)).first()
+
+    if not photo:
+        raise HTTPException(status_code=404, details="Photo not found")
+
+    photo.views += 1
+    session.add(photo)
+    session.commit()
+    session.refresh(photo)
+
+    return {
+        "id": photo.id,
+        "key": photo.key,
+        "likes": photo.likes,
+        "views": photo.views,
+        "uploaded_at": photo.uploaded_at,
+        "url": generate_presigned_view_url(photo.key),
+    }
+
+
+@app.post("/likes/{photo_id}")
+def like_photo(photo_id: int, session: Session = Depends(get_session)):
+    photo = session.exec(select(Photo).where(Photo.id == photo_id)).first()
+
+    if not photo:
+        raise HTTPException(status_code=404, details="Photo not found")
+
+    photo.likes += 1
+    session.add(photo)
+    session.commit()
+    session.refresh(photo)
+
+    return {
+        "id": photo.id,
+        "key": photo.key,
+        "likes": photo.likes,
+        "views": photo.views,
+        "uploaded_at": photo.uploaded_at,
+        "url": generate_presigned_view_url(photo.key),
+    }
