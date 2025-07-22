@@ -22,6 +22,8 @@ export function PhotoFeed({ photos, loadMore, hasMore }: PhotoFeedProps) {
 
     const [showScrollToTop, setShowScrollToTop] = useState(false);
 
+    const [zoomLevel, setZoomLevel] = useState<string>("4");
+
     useEffect(() => {
         const container = scrollContainerRef.current;
         const target = observerRef.current;
@@ -68,7 +70,15 @@ export function PhotoFeed({ photos, loadMore, hasMore }: PhotoFeedProps) {
 
     return (
         <div ref={scrollContainerRef} className="PhotoFeedWrapper">
-            <div className="PhotoFeed">
+            <div className="Controls">
+                <span className="spacer"></span>
+                <select className="ZoomLevel" onChange={e => setZoomLevel(e.target.value)} value={zoomLevel}>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+            <div className="PhotoFeed" style={{ "--column-amount": zoomLevel } as React.CSSProperties}>
                 {photos.map(photo => (
                     <LazyImage
                         key={photo.id}
