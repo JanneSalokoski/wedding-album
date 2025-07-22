@@ -97,6 +97,11 @@
     position: relative;
 }
 
+.PhotoFeedWrapper {
+    position: relative;
+    height: 100vh;
+    overflow-y: auto;
+}
 
 .OpenUploadForm {
     position: absolute;
