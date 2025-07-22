@@ -5,7 +5,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    z-index: 9998;
 }
 
 .PhotoViewerContent {
@@ -52,4 +52,14 @@
     padding: var(--gap);
 
     cursor: pointer;
+}
+
+.TagOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
 }

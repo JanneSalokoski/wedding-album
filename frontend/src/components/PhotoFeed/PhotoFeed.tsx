@@ -5,12 +5,18 @@ import { PhotoViewer } from "../PhotoViewer";
 
 import "./PhotoFeed.css";
 
+export interface Tag {
+    id: number;
+    name: string;
+}
+
 export interface Photo {
     id: number;
     url: string;
     likes: number;
     views: number;
     uploaded_at: string;
+    tags: Tag[];
 }
 
 export type SortOptions = "newest" | "oldest" | "liked" | "viewed";
