@@ -1,0 +1,18 @@
+.UploadForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+
+    justify-content: center;
+    align-items: center;
+
+    button[type="submit"] {
+        background-color: navy;
+        color: white;
+
+        padding: var(--gap);
+        border: none;
+
+        border-radius: 4px;
+    }
+}
