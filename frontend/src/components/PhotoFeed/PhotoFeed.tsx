@@ -18,11 +18,12 @@ export type SortOptions = "newest" | "oldest" | "liked" | "viewed";
 interface PhotoFeedProps {
     photos: Photo[]
     loadMore: (sort: SortOptions) => void
+    updatePhoto: (newPhoto: Photo) => void
     resetPhotos: () => void
     hasMore: boolean
 }
 
-export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedProps) {
+export function PhotoFeed({ photos, loadMore, resetPhotos, updatePhoto, hasMore }: PhotoFeedProps) {
     const observerRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -105,6 +106,7 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedP
                         src={photo.url}
                         alt={`Photo ${photo.id}`}
                         onClick={() => setSelectedPhoto(photo)}
+                        updatePhoto={updatePhoto}
                     />
                 ))}
                 {hasMore && <div ref={observerRef} style={{ height: '1px' }} />}
@@ -121,6 +123,7 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedP
             {selectedPhoto && (
                 <PhotoViewer
                     photo={selectedPhoto}
+                    updatePhoto={updatePhoto}
                     onClose={() => setSelectedPhoto(null)}
                 />
             )}

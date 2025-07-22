@@ -7,11 +7,14 @@ import { sendView } from "../../api";
 interface PhotoViewerProps {
     photo: Photo;
     onClose: () => void;
+    updatePhoto: (res: Photo) => void;
 }
 
-export function PhotoViewer({ photo, onClose }: PhotoViewerProps) {
+export function PhotoViewer({ photo, onClose, updatePhoto }: PhotoViewerProps) {
     useEffect(() => {
-        sendView(photo.id);
+        sendView(photo.id, (res: Photo) => {
+            updatePhoto(res);
+        });
     }, []);
 
     return (

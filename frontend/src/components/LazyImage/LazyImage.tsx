@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 
 import "./LazyImage.css";
 import { sendLike } from "../../api";
+import type { Photo } from "../PhotoFeed";
 
 
 interface LazyImageProps {
@@ -11,9 +12,10 @@ interface LazyImageProps {
     className?: string;
     style?: React.CSSProperties;
     onClick?: () => void;
+    updatePhoto: (newPhoto: Photo) => void;
 }
 
-export function LazyImage({ photoId, src, alt = '', className, onClick, style }: LazyImageProps) {
+export function LazyImage({ photoId, src, alt = '', className, onClick, updatePhoto, style }: LazyImageProps) {
     const [loaded, setLoaded] = useState(false);
     const [liked, setLiked] = useState(false);
 
@@ -25,9 +27,11 @@ export function LazyImage({ photoId, src, alt = '', className, onClick, style }:
             clickTimeoutRef.current = null;
         }
 
-        sendLike(photoId);
-        setLiked(true);
+        sendLike(photoId, (res: Photo) => {
+            updatePhoto(res);
+        });
         setTimeout(() => setLiked(false), 1000);
+        setLiked(true);
     }
 
     function handleClick() {
