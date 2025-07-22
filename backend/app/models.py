@@ -44,3 +44,7 @@ class DBTag(BaseTag, table=True):
 class PublicTag(BaseTag):
     id: int
     name: str
+
+
+class CreateTag(BaseTag):
+    name: str

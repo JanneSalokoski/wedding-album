@@ -7,7 +7,7 @@ from app.r2_utils import (
 from uuid import uuid4
 from sqlmodel import SQLModel, Session, select
 from app.database import engine, get_session
-from app.models import DBPhoto, PublicPhoto, DBTag, PublicTag
+from app.models import DBPhoto, PublicPhoto, DBTag, PublicTag, CreateTag
 
 from enum import Enum
 
@@ -102,3 +102,48 @@ def like_photo(photo_id: int, session: Session = Depends(get_session)):
     session.refresh(photo)
 
     return photo
+
+
+@app.get("/tags", response_model=list[PublicTag])
+def view_tags(session: Session = Depends(get_session)):
+    tags = session.exec(select(DBTag)).all()
+
+    return tags
+
+
+@app.get("/tags/{tag_id}", response_model=PublicTag)
+def view_tag(tag_id: int, session: Session = Depends(get_session)):
+    tag = session.exec(select(DBTag).where(DBTag.id == tag_id)).first()
+
+    if not tag:
+        raise HTTPException(status_code=404, details="Tag not found")
+
+    return tag
+
+
+@app.post("/tags", response_model=PublicTag)
+def create_tag(tag: CreateTag, session: Session = Depends(get_session)):
+    db_tag = DBTag.model_validate(tag)
+
+    session.add(db_tag)
+    session.commit()
+    session.refresh(db_tag)
+
+    return db_tag
+
+
+@app.patch("/tags/{tag_id}", response_model=PublicTag)
+def update_tag(tag_id: int, tag: CreateTag, session: Session = Depends(get_session)):
+    db_tag = session.exec(select(DBTag).where(DBTag.id == tag_id)).first()
+
+    if not db_tag:
+        raise HTTPException(status_code=404, details="Tag not found")
+
+    data = tag.model_dump(exclude_unset=True)
+    db_tag.sqlmodel_update(data)
+
+    session.add(db_tag)
+    session.commit()
+    session.refresh(tag)
+
+    return db_tag
