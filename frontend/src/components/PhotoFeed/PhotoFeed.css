@@ -64,6 +64,8 @@
 
     gap: var(--gap);
 
+    z-index: 1;
+
     select {
         pointer-events: auto;
 

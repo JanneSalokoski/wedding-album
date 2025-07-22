@@ -42,6 +42,10 @@ export function App() {
         setHasMore(true);
     }
 
+    function updatePhoto(newPhoto: Photo) {
+        setPhotos((prev: Photo[]) => prev.map(old => (old.id === newPhoto.id) ? newPhoto : old))
+    }
+
     const loadLatestPhotos = async () => {
         setUploadFormOpen(false);
 
@@ -63,6 +67,7 @@ export function App() {
                 photos={photos}
                 loadMore={loadPhotos}
                 resetPhotos={resetPhotos}
+                updatePhoto={updatePhoto}
                 hasMore={hasMore}
             />
             <button className="OpenUploadForm" onClick={() => setUploadFormOpen((prev) => !prev)}>Upload photos</button>

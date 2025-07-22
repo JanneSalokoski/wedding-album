@@ -1,0 +1,55 @@
+.PhotoViewerOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.PhotoViewerContent {
+    position: relative;
+    background: #111;
+    padding: 1rem;
+    border-radius: 8px;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    color: white;
+}
+
+.PhotoViewerContent img {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 4px;
+    object-fit: contain;
+}
+
+.PhotoDetails {
+    font-size: 0.9rem;
+
+    display: grid;
+    grid-template-columns: repeat(2, auto) 1fr repeat(1, auto);
+    gap: var(--gap);
+}
+
+.CloseViewer {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+
+    font-size: 1.5rem;
+
+    background-color: rgba(0, 0, 0, 0.4);
+    color: white;
+
+    border: none;
+    border-radius: 4px;
+
+    padding: var(--gap);
+
+    cursor: pointer;
+}

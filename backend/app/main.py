@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Depends, Query
+from fastapi import FastAPI, UploadFile, File, Depends, Query, HTTPException
 from app.r2_utils import (
     generate_presigned_post,
     generate_presigned_view_url,
@@ -9,6 +9,8 @@ from uuid import uuid4
 from sqlmodel import SQLModel, Session, select
 from app.database import engine, get_session
 from app.models import Photo, PhotoRead
+
+from enum import Enum
 
 app = FastAPI(root_path="/api")
 
@@ -43,22 +45,85 @@ async def upload_file(
     return {"id": photo.id, "key": photo.key}
 
 
+class SortOption(str, Enum):
+    newest = "newest"
+    oldest = "oldest"
+    liked = "liked"
+    viewed = "viewed"
+
+
 @app.get("/photos", response_model=list[PhotoRead])
 def list_photos(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    sort: SortOption = Query(SortOption.newest),
     session: Session = Depends(get_session),
 ):
-    photos = session.exec(
-        select(Photo).order_by(Photo.uploaded_at.desc()).offset(offset).limit(limit)
-    ).all()
+    query = select(Photo)
+
+    if sort == SortOption.newest:
+        query = query.order_by(Photo.uploaded_at.desc())
+    elif sort == SortOption.oldest:
+        query = query.order_by(Photo.uploaded_at.asc())
+    elif sort == SortOption.liked:
+        query = query.order_by(Photo.likes.desc())
+    elif sort == SortOption.viewed:
+        query = query.order_by(Photo.views.desc())
+
+    photos = session.exec(query.offset(offset).limit(limit)).all()
 
     return [
         {
             "id": photo.id,
             "key": photo.key,
+            "likes": photo.likes,
+            "views": photo.views,
             "uploaded_at": photo.uploaded_at,
             "url": generate_presigned_view_url(photo.key),
         }
         for photo in photos
     ]
+
+
+@app.post("/views/{photo_id}")
+def view_photo(photo_id: int, session: Session = Depends(get_session)):
+    photo = session.exec(select(Photo).where(Photo.id == photo_id)).first()
+
+    if not photo:
+        raise HTTPException(status_code=404, details="Photo not found")
+
+    photo.views += 1
+    session.add(photo)
+    session.commit()
+    session.refresh(photo)
+
+    return {
+        "id": photo.id,
+        "key": photo.key,
+        "likes": photo.likes,
+        "views": photo.views,
+        "uploaded_at": photo.uploaded_at,
+        "url": generate_presigned_view_url(photo.key),
+    }
+
+
+@app.post("/likes/{photo_id}")
+def like_photo(photo_id: int, session: Session = Depends(get_session)):
+    photo = session.exec(select(Photo).where(Photo.id == photo_id)).first()
+
+    if not photo:
+        raise HTTPException(status_code=404, details="Photo not found")
+
+    photo.likes += 1
+    session.add(photo)
+    session.commit()
+    session.refresh(photo)
+
+    return {
+        "id": photo.id,
+        "key": photo.key,
+        "likes": photo.likes,
+        "views": photo.views,
+        "uploaded_at": photo.uploaded_at,
+        "url": generate_presigned_view_url(photo.key),
+    }

@@ -1,51 +1,72 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+
+import "./LazyImage.css";
+import { sendLike } from "../../api";
+import type { Photo } from "../PhotoFeed";
 
 
 interface LazyImageProps {
+    photoId: number;
     src: string;
     alt?: string;
     className?: string;
     style?: React.CSSProperties;
+    onClick?: () => void;
+    updatePhoto: (newPhoto: Photo) => void;
 }
 
-export function LazyImage({ src, alt = '', className, style }: LazyImageProps) {
-    const [loaded, setLoaded] = useState(false)
+export function LazyImage({ photoId, src, alt = '', className, onClick, updatePhoto, style }: LazyImageProps) {
+    const [loaded, setLoaded] = useState(false);
+    const [liked, setLiked] = useState(false);
+
+    const clickTimeoutRef = useRef<number | null>(null);
+
+    function handleDoubleClick() {
+        if (clickTimeoutRef.current !== null) {
+            window.clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = null;
+        }
+
+        sendLike(photoId, (res: Photo) => {
+            updatePhoto(res);
+        });
+        setTimeout(() => setLiked(false), 1000);
+        setLiked(true);
+    }
+
+    function handleClick() {
+        if (!onClick) {
+            return;
+        }
+
+        if (clickTimeoutRef.current !== null) {
+            window.clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = null;
+            return;
+        }
+
+        clickTimeoutRef.current = window.setTimeout(() => {
+            onClick?.();
+            clickTimeoutRef.current = null;
+        }, 250);
+    }
 
     return (
-        <div className={className}
-            style={{
-                background: '#333',
-                ...style,
-            }}
-        >
-            {
-                !loaded && (
-                    <div
-                        style={{
-                            position: 'absolute',
-                            inset: 0,
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            zIndex: 1,
-                        }}
-                    >
-                        <div className="spinner" />
-                    </div>
-                )
-            }
-            <img
+        <div className={`LazyImageWrapper ${className}`} style={style} >
+            {!loaded && (
+                <div className="LazyImageSpinnerOverlay">
+                    <div className="spinner" />
+                </div>
+            )}
+            {liked && (
+                <div className="LikeOverlay">
+                    ❤️
+                </div>
+            )}
+            <img onDoubleClick={handleDoubleClick} onClick={handleClick}
                 src={src}
                 alt={alt}
                 onLoad={() => setLoaded(true)}
-                style={{
-                    display: 'block',
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    opacity: loaded ? 1 : 0,
-                    transition: 'opacity 0.3s ease-in-out',
-                }}
             />
         </div>
     )

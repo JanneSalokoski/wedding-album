@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 
 import { LazyImage } from "../LazyImage";
+import { PhotoViewer } from "../PhotoViewer";
 
 import "./PhotoFeed.css";
 
 export interface Photo {
     id: number;
     url: string;
+    likes: number;
+    views: number;
     uploaded_at: string;
 }
 
@@ -15,11 +18,12 @@ export type SortOptions = "newest" | "oldest" | "liked" | "viewed";
 interface PhotoFeedProps {
     photos: Photo[]
     loadMore: (sort: SortOptions) => void
+    updatePhoto: (newPhoto: Photo) => void
     resetPhotos: () => void
     hasMore: boolean
 }
 
-export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedProps) {
+export function PhotoFeed({ photos, loadMore, resetPhotos, updatePhoto, hasMore }: PhotoFeedProps) {
     const observerRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -28,6 +32,7 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedP
 
     const [zoomLevel, setZoomLevel] = useState<string>("4");
     const [sortOption, setSortOption] = useState<SortOptions>("newest");
+    const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
 
     useEffect(() => {
         const container = scrollContainerRef.current;
@@ -97,8 +102,11 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedP
                 {photos.map(photo => (
                     <LazyImage
                         key={photo.id}
+                        photoId={photo.id}
                         src={photo.url}
                         alt={`Photo ${photo.id}`}
+                        onClick={() => setSelectedPhoto(photo)}
+                        updatePhoto={updatePhoto}
                     />
                 ))}
                 {hasMore && <div ref={observerRef} style={{ height: '1px' }} />}
@@ -110,6 +118,14 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedP
                         ↑
                     </button>
                 </div>
+            )}
+
+            {selectedPhoto && (
+                <PhotoViewer
+                    photo={selectedPhoto}
+                    updatePhoto={updatePhoto}
+                    onClose={() => setSelectedPhoto(null)}
+                />
             )}
         </div>
     );
