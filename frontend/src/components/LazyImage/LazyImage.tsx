@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import "./LazyImage.css";
+import { sendLike } from "../../api";
 
 
 interface LazyImageProps {
+    photoId: number;
     src: string;
     alt?: string;
     className?: string;
@@ -11,20 +13,38 @@ interface LazyImageProps {
     onClick?: () => void;
 }
 
-export function LazyImage({ src, alt = '', className, onClick, style }: LazyImageProps) {
+export function LazyImage({ photoId, src, alt = '', className, onClick, style }: LazyImageProps) {
     const [loaded, setLoaded] = useState(false);
     const [liked, setLiked] = useState(false);
 
+    const clickTimeoutRef = useRef<number | null>(null);
+
     function handleDoubleClick() {
-        console.log("Like! Send this to server maybe?");
+        if (clickTimeoutRef.current !== null) {
+            window.clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = null;
+        }
+
+        sendLike(photoId);
         setLiked(true);
         setTimeout(() => setLiked(false), 1000);
     }
 
     function handleClick() {
-        if (onClick) {
-            onClick();
+        if (!onClick) {
+            return;
         }
+
+        if (clickTimeoutRef.current !== null) {
+            window.clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = null;
+            return;
+        }
+
+        clickTimeoutRef.current = window.setTimeout(() => {
+            onClick?.();
+            clickTimeoutRef.current = null;
+        }, 250);
     }
 
     return (

@@ -101,6 +101,7 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedP
                 {photos.map(photo => (
                     <LazyImage
                         key={photo.id}
+                        photoId={photo.id}
                         src={photo.url}
                         alt={`Photo ${photo.id}`}
                         onClick={() => setSelectedPhoto(photo)}
