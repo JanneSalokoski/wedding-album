@@ -10,6 +10,7 @@ class PhotoTagLink(SQLModel, table=True):
 
 class BasePhoto(SQLModel):
     key: str
+    url: str
     views: int
     likes: int
     uploaded_at: datetime
@@ -18,6 +19,7 @@ class BasePhoto(SQLModel):
 class DBPhoto(BasePhoto, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     key: str
+    url: str
     views: int = 0
     likes: int = 0
     content_type: Optional[str]

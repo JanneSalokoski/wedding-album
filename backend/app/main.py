@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Depends, Query, HTTPException
 from app.r2_utils import (
     generate_presigned_post,
+    generate_presigned_view_url,
     s3_client,
     R2_BUCKET,
 )
@@ -37,6 +38,7 @@ async def upload_file(
     )
 
     photo = DBPhoto(key=object_key, content_type=file.content_type)
+    photo.url = generate_presigned_view_url(photo.key)
     session.add(photo)
     session.commit()
     session.refresh(photo)
@@ -72,6 +74,25 @@ def list_photos(
     photos = session.exec(query.offset(offset).limit(limit)).all()
 
     return photos
+
+
+@app.post("/photos/{photo_id}/tags/{tag_id}", response_model=PublicPhoto)
+def add_tag_to_photo(
+    photo_id: int, tag_id: int, session: Session = Depends(get_session)
+):
+    photo = session.get(DBPhoto, photo_id)
+    tag = session.get(DBTag, tag_id)
+
+    if not photo or not tag:
+        raise HTTPException(status_code=404, detail="Photo or tag not found")
+
+    if tag not in photo.tags:
+        photo.tags.append(tag)
+        session.add(photo)
+        session.commit()
+        session.refresh(photo)
+
+    return photo
 
 
 @app.post("/views/{photo_id}", response_model=PublicPhoto)
