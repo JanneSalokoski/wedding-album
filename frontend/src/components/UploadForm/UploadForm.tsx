@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 
 import { formatFileSize } from "../../utils/formatFileSize";
 
+import "./UploadForm.css";
+
 interface UploadFormProps {
     onSuccess?: () => void
 }
