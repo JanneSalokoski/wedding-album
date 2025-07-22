@@ -14,9 +14,7 @@ export function LazyImage({ src, alt = '', className, style }: LazyImageProps) {
     return (
         <div className={className}
             style={{
-                position: 'relative',
-                overflow: 'hidden',
-                background: '#eee',
+                background: '#333',
                 ...style,
             }}
         >

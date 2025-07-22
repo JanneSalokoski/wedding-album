@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 import './App.css';
 
@@ -14,6 +14,8 @@ export function App() {
     const maxId = useRef<number>(0);
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+
+    const [uploadFormOpen, setUploadFormOpen] = useState<boolean>(false);
 
     const loadPhotos = useCallback(async () => {
         if (!hasMore) return;
@@ -32,6 +34,8 @@ export function App() {
     }, [offset, hasMore]);
 
     const loadLatestPhotos = async () => {
+        setUploadFormOpen(false);
+
         const res = await fetch(`/api/photos?limit=20&offset=0`);
         const newPhotos: Photo[] = await res.json();
 
@@ -46,12 +50,18 @@ export function App() {
 
     return (
         <div className="App">
-            <UploadForm onSuccess={loadLatestPhotos} />
             <PhotoFeed
                 photos={photos}
                 loadMore={loadPhotos}
                 hasMore={hasMore}
             />
+            <button className="OpenUploadForm" onClick={() => setUploadFormOpen((prev) => !prev)}>Upload photos</button>
+            {uploadFormOpen && (
+                <div className="UploadFormOverlay">
+                    <button className="close-form" onClick={() => setUploadFormOpen(false)}>Cancel</button>
+                    <UploadForm onSuccess={loadLatestPhotos} />
+                </div>
+            )}
         </div>
     );
 }
