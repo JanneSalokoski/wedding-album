@@ -1,6 +1,8 @@
 import "./PhotoViewer.css";
 
 import type { Photo } from "../PhotoFeed";
+import { useEffect } from "react";
+import { sendView } from "../../api";
 
 interface PhotoViewerProps {
     photo: Photo;
@@ -8,6 +10,10 @@ interface PhotoViewerProps {
 }
 
 export function PhotoViewer({ photo, onClose }: PhotoViewerProps) {
+    useEffect(() => {
+        sendView(photo.id);
+    }, []);
+
     return (
         <div className="PhotoViewerOverlay" onClick={onClose}>
             <div className="PhotoViewerContent" onClick={(e) => e.stopPropagation()}>
