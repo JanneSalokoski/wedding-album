@@ -29,6 +29,7 @@ class DBPhoto(BasePhoto, table=True):
 
 
 class PublicPhoto(BasePhoto):
+    id: int
     tags: list["PublicTag"]
 
 
