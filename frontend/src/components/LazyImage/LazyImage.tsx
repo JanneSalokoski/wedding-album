@@ -8,9 +8,10 @@ interface LazyImageProps {
     alt?: string;
     className?: string;
     style?: React.CSSProperties;
+    onClick?: () => void;
 }
 
-export function LazyImage({ src, alt = '', className, style }: LazyImageProps) {
+export function LazyImage({ src, alt = '', className, onClick, style }: LazyImageProps) {
     const [loaded, setLoaded] = useState(false);
     const [liked, setLiked] = useState(false);
 
@@ -18,6 +19,12 @@ export function LazyImage({ src, alt = '', className, style }: LazyImageProps) {
         console.log("Like! Send this to server maybe?");
         setLiked(true);
         setTimeout(() => setLiked(false), 1000);
+    }
+
+    function handleClick() {
+        if (onClick) {
+            onClick();
+        }
     }
 
     return (
@@ -32,7 +39,7 @@ export function LazyImage({ src, alt = '', className, style }: LazyImageProps) {
                     ❤️
                 </div>
             )}
-            <img onDoubleClick={handleDoubleClick}
+            <img onDoubleClick={handleDoubleClick} onClick={handleClick}
                 src={src}
                 alt={alt}
                 onLoad={() => setLoaded(true)}

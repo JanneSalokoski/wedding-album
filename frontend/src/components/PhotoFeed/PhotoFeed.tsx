@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 
 import { LazyImage } from "../LazyImage";
+import { PhotoViewer } from "../PhotoViewer";
 
 import "./PhotoFeed.css";
 
 export interface Photo {
     id: number;
     url: string;
+    likes: number;
+    views: number;
     uploaded_at: string;
 }
 
@@ -28,6 +31,7 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedP
 
     const [zoomLevel, setZoomLevel] = useState<string>("4");
     const [sortOption, setSortOption] = useState<SortOptions>("newest");
+    const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
 
     useEffect(() => {
         const container = scrollContainerRef.current;
@@ -99,6 +103,7 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedP
                         key={photo.id}
                         src={photo.url}
                         alt={`Photo ${photo.id}`}
+                        onClick={() => setSelectedPhoto(photo)}
                     />
                 ))}
                 {hasMore && <div ref={observerRef} style={{ height: '1px' }} />}
@@ -110,6 +115,13 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedP
                         ↑
                     </button>
                 </div>
+            )}
+
+            {selectedPhoto && (
+                <PhotoViewer
+                    photo={selectedPhoto}
+                    onClose={() => setSelectedPhoto(null)}
+                />
             )}
         </div>
     );
