@@ -11,17 +11,28 @@ interface LazyImageProps {
 }
 
 export function LazyImage({ src, alt = '', className, style }: LazyImageProps) {
-    const [loaded, setLoaded] = useState(false)
+    const [loaded, setLoaded] = useState(false);
+    const [liked, setLiked] = useState(false);
+
+    function handleDoubleClick() {
+        console.log("Like! Send this to server maybe?");
+        setLiked(true);
+        setTimeout(() => setLiked(false), 1000);
+    }
 
     return (
-        <div className={`LazyImageWrapper ${className}`} style={style}>
+        <div className={`LazyImageWrapper ${className}`} style={style} >
             {!loaded && (
                 <div className="LazyImageSpinnerOverlay">
                     <div className="spinner" />
                 </div>
-            )
-            }
-            <img
+            )}
+            {liked && (
+                <div className="LikeOverlay">
+                    ❤️
+                </div>
+            )}
+            <img onDoubleClick={handleDoubleClick}
                 src={src}
                 alt={alt}
                 onLoad={() => setLoaded(true)}

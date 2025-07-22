@@ -6,7 +6,9 @@
     overflow: hidden;
     border-radius: 4px;
     display: block;
-    z-index: -1;
+    z-index: 0;
+
+    user-select: none;
 }
 
 .LazyImage {
@@ -16,6 +18,8 @@
     object-fit: cover;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
+
+    user-select: none;
 }
 
 .LazyImage.loaded {
@@ -44,5 +48,34 @@
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+.LikeOverlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    font-size: 4rem;
+    opacity: 1;
+    animation: pop-fade 1s ease-out forwards;
+    pointer-events: none;
+    z-index: 2;
+}
+
+@keyframes pop-fade {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
     }
 }
