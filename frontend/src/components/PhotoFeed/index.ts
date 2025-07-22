@@ -1,2 +1,2 @@
-export type { Photo } from "./PhotoFeed";
+export type { Photo, Tag } from "./PhotoFeed";
 export { PhotoFeed } from "./PhotoFeed";

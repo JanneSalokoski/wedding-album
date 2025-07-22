@@ -1,13 +1,14 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 import './App.css';
 
-import type { Photo } from './components/PhotoFeed';
+import type { Photo, Tag } from './components/PhotoFeed';
 
 import { UploadForm } from './components/UploadForm';
 import { PhotoFeed } from './components/PhotoFeed';
 
 import type { SortOptions } from './components/PhotoFeed/PhotoFeed';
+import { getTags } from './api';
 
 export function App() {
     const [photos, setPhotos] = useState<Photo[]>([]);
@@ -15,6 +16,12 @@ export function App() {
     const maxId = useRef<number>(0);
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+
+    const [tags, setTags] = useState<Tag[]>([]);
+
+    useEffect(() => {
+        getTags((res: Tag[]) => setTags(res));
+    }, [])
 
     const [uploadFormOpen, setUploadFormOpen] = useState<boolean>(false);
 
@@ -65,6 +72,7 @@ export function App() {
         <div className="App">
             <PhotoFeed
                 photos={photos}
+                tags={tags}
                 loadMore={loadPhotos}
                 resetPhotos={resetPhotos}
                 updatePhoto={updatePhoto}

@@ -23,13 +23,14 @@ export type SortOptions = "newest" | "oldest" | "liked" | "viewed";
 
 interface PhotoFeedProps {
     photos: Photo[]
+    tags: Tag[]
     loadMore: (sort: SortOptions) => void
     updatePhoto: (newPhoto: Photo) => void
     resetPhotos: () => void
     hasMore: boolean
 }
 
-export function PhotoFeed({ photos, loadMore, resetPhotos, updatePhoto, hasMore }: PhotoFeedProps) {
+export function PhotoFeed({ photos, tags, loadMore, resetPhotos, updatePhoto, hasMore }: PhotoFeedProps) {
     const observerRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -38,7 +39,7 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, updatePhoto, hasMore 
 
     const [zoomLevel, setZoomLevel] = useState<string>("4");
     const [sortOption, setSortOption] = useState<SortOptions>("newest");
-    const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+    const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
 
     useEffect(() => {
         const container = scrollContainerRef.current;
@@ -111,7 +112,7 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, updatePhoto, hasMore 
                         photoId={photo.id}
                         src={photo.url}
                         alt={`Photo ${photo.id}`}
-                        onClick={() => setSelectedPhoto(photo)}
+                        onClick={() => setSelectedPhoto(photo.id)}
                         updatePhoto={updatePhoto}
                     />
                 ))}
@@ -128,7 +129,8 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, updatePhoto, hasMore 
 
             {selectedPhoto && (
                 <PhotoViewer
-                    photo={selectedPhoto}
+                    tags={tags}
+                    photo={photos[selectedPhoto]}
                     updatePhoto={updatePhoto}
                     onClose={() => setSelectedPhoto(null)}
                 />

@@ -1,16 +1,17 @@
 import "./PhotoViewer.css";
 
-import type { Photo } from "../PhotoFeed";
+import type { Photo, Tag } from "../PhotoFeed";
 import { useEffect, useState } from "react";
-import { sendView } from "../../api";
+import { addTag, sendView } from "../../api";
 
 interface PhotoViewerProps {
     photo: Photo;
+    tags: Tag[];
     onClose: () => void;
     updatePhoto: (res: Photo) => void;
 }
 
-export function PhotoViewer({ photo, onClose, updatePhoto }: PhotoViewerProps) {
+export function PhotoViewer({ photo, tags, onClose, updatePhoto }: PhotoViewerProps) {
 
     const [tagOverlayOpen, setTagOverlayOpen] = useState<boolean>(false);
     const [selectedTag, selectTag] = useState<number>(1);
@@ -20,10 +21,15 @@ export function PhotoViewer({ photo, onClose, updatePhoto }: PhotoViewerProps) {
         });
     }, []);
 
-    function addTag(event: React.FormEvent) {
+    function addNewTag(event: React.FormEvent) {
         event.preventDefault();
 
-        console.log(selectedTag);
+        console.log("adding tag")
+        addTag(photo.id, selectedTag, (res: Photo) => {
+            console.log(res);
+            updatePhoto(res);
+            setTagOverlayOpen(false);
+        });
     }
 
     return (
@@ -52,12 +58,18 @@ export function PhotoViewer({ photo, onClose, updatePhoto }: PhotoViewerProps) {
                 </ul>
                 <button className="CloseViewer" onClick={onClose}>x</button>
                 {tagOverlayOpen && (
-                    <form className="TagOverlay" onSubmit={addTag}>
+                    <form className="TagOverlay" onSubmit={addNewTag}>
                         <select name="tag" value={selectedTag} onChange={e => selectTag(parseInt(e.target.value) ?? 1)}>
-                            <option value={1}>hääpari</option>
-                            <option value={2}>ruoka</option>
+                            {
+                                tags.map((tag) => (
+                                    <option key={tag.id} value={tag.id}>
+                                        {tag.name}
+                                    </option>
+                                ))
+                            }
                         </select>
                         <button type="submit">Add tag</button>
+                        <button onClick={() => setTagOverlayOpen(false)}>Close</button>
                     </form>
                 )}
             </div>
