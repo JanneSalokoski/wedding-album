@@ -10,19 +10,24 @@ export interface Photo {
     uploaded_at: string;
 }
 
+export type SortOptions = "newest" | "oldest" | "liked" | "viewed";
+
 interface PhotoFeedProps {
     photos: Photo[]
-    loadMore: () => void
+    loadMore: (sort: SortOptions) => void
+    resetPhotos: () => void
     hasMore: boolean
 }
 
-export function PhotoFeed({ photos, loadMore, hasMore }: PhotoFeedProps) {
+export function PhotoFeed({ photos, loadMore, resetPhotos, hasMore }: PhotoFeedProps) {
     const observerRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
     const [showScrollToTop, setShowScrollToTop] = useState(false);
 
+
     const [zoomLevel, setZoomLevel] = useState<string>("4");
+    const [sortOption, setSortOption] = useState<SortOptions>("newest");
 
     useEffect(() => {
         const container = scrollContainerRef.current;
@@ -35,7 +40,7 @@ export function PhotoFeed({ photos, loadMore, hasMore }: PhotoFeedProps) {
         const observer = new IntersectionObserver(
             (entries) => {
                 if (entries[0].isIntersecting) {
-                    loadMore()
+                    loadMore(sortOption)
                 }
             },
             { root: container, threshold: 1.0 }
@@ -45,7 +50,11 @@ export function PhotoFeed({ photos, loadMore, hasMore }: PhotoFeedProps) {
 
         return () => observer.disconnect();
 
-    }, [loadMore])
+    }, [loadMore, sortOption])
+
+    useEffect(() => {
+        resetPhotos()
+    }, [sortOption]);
 
     useEffect(() => {
         const container = scrollContainerRef.current;
@@ -72,6 +81,12 @@ export function PhotoFeed({ photos, loadMore, hasMore }: PhotoFeedProps) {
         <div ref={scrollContainerRef} className="PhotoFeedWrapper">
             <div className="Controls">
                 <span className="spacer"></span>
+                <select className="SortOption" onChange={e => setSortOption(e.target.value as SortOptions)} value={sortOption}>
+                    <option value="newest">Newest</option>
+                    <option value="oldest">Oldest</option>
+                    <option value="liked">Liked</option>
+                    <option value="viewed">Viewed</option>
+                </select>
                 <select className="ZoomLevel" onChange={e => setZoomLevel(e.target.value)} value={zoomLevel}>
                     <option value="1">1</option>
                     <option value="2">2</option>

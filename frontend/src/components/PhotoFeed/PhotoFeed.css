@@ -60,7 +60,9 @@
     top: 0;
 
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr repeat(2, auto);
+
+    gap: var(--gap);
 
     select {
         pointer-events: auto;

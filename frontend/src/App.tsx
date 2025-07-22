@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 import './App.css';
 
@@ -7,6 +7,7 @@ import type { Photo } from './components/PhotoFeed';
 import { UploadForm } from './components/UploadForm';
 import { PhotoFeed } from './components/PhotoFeed';
 
+import type { SortOptions } from './components/PhotoFeed/PhotoFeed';
 
 export function App() {
     const [photos, setPhotos] = useState<Photo[]>([]);
@@ -17,9 +18,9 @@ export function App() {
 
     const [uploadFormOpen, setUploadFormOpen] = useState<boolean>(false);
 
-    const loadPhotos = useCallback(async () => {
+    const loadPhotos = useCallback(async (sortOption: SortOptions) => {
         if (!hasMore) return;
-        const res = await fetch(`/api/photos?limit=20&offset=${offset}`);
+        const res = await fetch(`/api/photos?limit=20&offset=${offset}&sort=${sortOption}`);
         const newPhotos: Photo[] = await res.json();
 
         const filtered = newPhotos.filter(photo => !seenIds.current.has(photo.id));
@@ -32,6 +33,14 @@ export function App() {
             if (newPhotos.length < 20) setHasMore(false);
         }
     }, [offset, hasMore]);
+
+    function resetPhotos() {
+        seenIds.current.clear();
+        maxId.current = 0;
+        setPhotos([]);
+        setOffset(0);
+        setHasMore(true);
+    }
 
     const loadLatestPhotos = async () => {
         setUploadFormOpen(false);
@@ -53,6 +62,7 @@ export function App() {
             <PhotoFeed
                 photos={photos}
                 loadMore={loadPhotos}
+                resetPhotos={resetPhotos}
                 hasMore={hasMore}
             />
             <button className="OpenUploadForm" onClick={() => setUploadFormOpen((prev) => !prev)}>Upload photos</button>
