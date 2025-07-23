@@ -38,7 +38,6 @@ async def upload_file(
     )
 
     photo = DBPhoto(key=object_key, content_type=file.content_type)
-    photo.url = generate_presigned_view_url(photo.key)
     session.add(photo)
     session.commit()
     session.refresh(photo)
@@ -73,6 +72,9 @@ def list_photos(
 
     photos = session.exec(query.offset(offset).limit(limit)).all()
 
+    for photo in photos:
+        photo.url = generate_presigned_view_url(photo.key)
+
     return photos
 
 
@@ -92,6 +94,8 @@ def add_tag_to_photo(
         session.commit()
         session.refresh(photo)
 
+    photo.url = generate_presigned_view_url(photo.key)
+
     return photo
 
 
@@ -107,6 +111,8 @@ def view_photo(photo_id: int, session: Session = Depends(get_session)):
     session.commit()
     session.refresh(photo)
 
+    photo.url = generate_presigned_view_url(photo.key)
+
     return photo
 
 
@@ -121,6 +127,8 @@ def like_photo(photo_id: int, session: Session = Depends(get_session)):
     session.add(photo)
     session.commit()
     session.refresh(photo)
+
+    photo.url = generate_presigned_view_url(photo.key)
 
     return photo
 
