@@ -8,6 +8,11 @@ class PhotoTagLink(SQLModel, table=True):
     tag_id: int = Field(foreign_key="dbtag.id", primary_key=True)
 
 
+class PhotoPersonLink(SQLModel, table=True):
+    photo_id: int = Field(foreign_key="dbphoto.id", primary_key=True)
+    person_id: int = Field(foreign_key="dbperson.id", primary_key=True)
+
+
 class BasePhoto(SQLModel):
     key: str
     views: int
@@ -25,12 +30,16 @@ class DBPhoto(BasePhoto, table=True):
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
 
     tags: list["DBTag"] = Relationship(back_populates="photos", link_model=PhotoTagLink)
+    persons: list["DBPerson"] = Relationship(
+        back_populates="photos", link_model=PhotoPersonLink
+    )
 
 
 class PublicPhoto(BasePhoto):
     id: int
     url: str | None
     tags: list["PublicTag"]
+    persons: list["PublicPerson"]
 
 
 class BaseTag(SQLModel):
@@ -51,3 +60,24 @@ class PublicTag(BaseTag):
 
 class CreateTag(BaseTag):
     name: str
+
+
+class BasePerson(SQLModel):
+    name: str
+
+
+class DBPerson(BasePerson, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+
+    photos: list[DBPhoto] = Relationship(
+        back_populates="persons", link_model=PhotoPersonLink
+    )
+
+
+class PublicPerson(BasePerson):
+    pass
+
+
+class CreatePerson(BasePerson):
+    pass
