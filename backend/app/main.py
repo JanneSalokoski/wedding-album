@@ -128,6 +128,26 @@ def set_tags(
     return photo
 
 
+@app.post("/photos/{photo_id}/persons", response_model=PublicPhoto)
+def set_persons(
+    photo_id: int, person_ids: list[int], session: Session = Depends(get_session)
+):
+    photo = session.get(DBPhoto, photo_id)
+    persons = [session.get(DBPerson, id) for id in person_ids]
+
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    photo.persons = persons
+    session.add(photo)
+    session.commit()
+    session.refresh(photo)
+
+    photo.url = generate_presigned_view_url(photo.key)
+
+    return photo
+
+
 @app.post("/photos/{photo_id}/persons/{person_id}", response_model=PublicPhoto)
 def add_person_to_photo(
     photo_id: int, person_id: int, session: Session = Depends(get_session)
