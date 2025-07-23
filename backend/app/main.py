@@ -8,7 +8,16 @@ from app.r2_utils import (
 from uuid import uuid4
 from sqlmodel import SQLModel, Session, select
 from app.database import engine, get_session
-from app.models import DBPhoto, PublicPhoto, DBTag, PublicTag, CreateTag
+from app.models import (
+    DBPhoto,
+    PublicPhoto,
+    DBTag,
+    PublicTag,
+    CreateTag,
+    DBPerson,
+    PublicPerson,
+    CreatePerson,
+)
 
 from enum import Enum
 
@@ -99,6 +108,27 @@ def add_tag_to_photo(
     return photo
 
 
+@app.post("/photos/{photo_id}/persons/{person_id}", response_model=PublicPhoto)
+def add_person_to_photo(
+    photo_id: int, person_id: int, session: Session = Depends(get_session)
+):
+    photo = session.get(DBPhoto, photo_id)
+    person = session.get(DBPerson, person_id)
+
+    if not photo or not person:
+        raise HTTPException(status_code=404, detail="Photo or person not found")
+
+    if person not in photo.tags:
+        photo.persons.append(person)
+        session.add(photo)
+        session.commit()
+        session.refresh(photo)
+
+    photo.url = generate_presigned_view_url(photo.key)
+
+    return photo
+
+
 @app.post("/views/{photo_id}", response_model=PublicPhoto)
 def view_photo(photo_id: int, session: Session = Depends(get_session)):
     photo = session.exec(select(DBPhoto).where(DBPhoto.id == photo_id)).first()
@@ -176,3 +206,50 @@ def update_tag(tag_id: int, tag: CreateTag, session: Session = Depends(get_sessi
     session.refresh(tag)
 
     return db_tag
+
+
+@app.get("/persons", response_model=list[PublicPerson])
+def view_persons(session: Session = Depends(get_session)):
+    persons = session.exec(select(DBPerson)).all()
+
+    return persons
+
+
+@app.get("/persons/{person_id}", response_model=PublicPerson)
+def view_person(person_id: int, session: Session = Depends(get_session)):
+    person = session.exec(select(DBPerson).where(DBPerson.id == person_id)).first()
+
+    if not person:
+        raise HTTPException(status_code=404, details="Person not found")
+
+    return person
+
+
+@app.post("/persons", response_model=PublicPerson)
+def create_person(person: CreatePerson, session: Session = Depends(get_session)):
+    db_person = DBPerson.model_validate(person)
+
+    session.add(db_person)
+    session.commit()
+    session.refresh(db_person)
+
+    return db_person
+
+
+@app.patch("/persons/{person_id}", response_model=PublicPerson)
+def update_person(
+    person_id: int, person: CreatePerson, session: Session = Depends(get_session)
+):
+    db_person = session.exec(select(DBPerson).where(DBPerson.id == person_id)).first()
+
+    if not db_person:
+        raise HTTPException(status_code=404, details="Person not found")
+
+    data = person.model_dump(exclude_unset=True)
+    db_person.sqlmodel_update(data)
+
+    session.add(db_person)
+    session.commit()
+    session.refresh(person)
+
+    return db_person
