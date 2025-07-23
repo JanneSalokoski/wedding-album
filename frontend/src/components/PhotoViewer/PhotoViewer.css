@@ -177,3 +177,8 @@ ul.Tags li.edit button {
 ul.Tags li.edit button:hover {
     border-color: indianred;
 }
+
+.subtitle {
+    width: 5rem;
+    font-size: 0.9rem;
+}

@@ -88,6 +88,7 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                     <p className="uploaded">Date: {new Date(photo.uploaded_at).toLocaleString()}</p>
                 </div>
                 <ul className="Tags">
+                    <span className="subtitle">Tags:</span>
                     {
                         editingTags ? (
                             <>
@@ -151,6 +152,7 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                     </li>
                 </ul>
                 <ul className="Persons">
+                    <span className="subtitle">People:</span>
                     {addingPerson ? (
                         <form onSubmit={savePersonChanges}>
                             <fieldset className="persons">
