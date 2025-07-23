@@ -2,7 +2,7 @@ import "./PhotoViewer.css";
 
 import type { Photo, Tag } from "../PhotoFeed";
 import { useEffect, useState } from "react";
-import { addTag, sendView, addPerson, createPerson } from "../../api";
+import { addTag, setTags, sendView, addPerson, createPerson } from "../../api";
 import type { Person } from "../../types";
 
 interface PhotoViewerProps {
@@ -19,6 +19,8 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
     const [tagOverlayOpen, setTagOverlayOpen] = useState<boolean>(false);
     const [selectedTag, selectTag] = useState<number>(1);
 
+    const [selectedTags, setSelectedTags] = useState<Set<number>>(new Set());
+
     const [personOverlayOpen, setPersonOverlayOpen] = useState<boolean>(false);
     const [newPersonName, setNewPersonName] = useState<string>("");
     useEffect(() => {
@@ -29,14 +31,17 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
         refreshPersons();
     }, []);
 
-    function addNewTag(event: React.FormEvent) {
+    async function addNewTag(event: React.FormEvent) {
         event.preventDefault();
 
-        addTag(photo.id, selectedTag, (res: Photo) => {
-            console.log(res)
-            updatePhoto(res);
-            setTagOverlayOpen(false);
-        });
+        const newPhoto = await setTags(photo.id, [...selectedTags]);
+        console.log(newPhoto);
+
+        if (newPhoto) {
+            updatePhoto(newPhoto);
+        }
+
+        setTagOverlayOpen(false);
     }
 
     function addNewPerson(event: React.FormEvent) {
@@ -99,16 +104,34 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                 <button className="CloseViewer" onClick={onClose}>x</button>
                 {tagOverlayOpen && (
                     <form className="TagOverlay" onSubmit={addNewTag}>
-                        <select name="tag" value={selectedTag} onChange={e => selectTag(parseInt(e.target.value) ?? 1)}>
-                            {
-                                tags.map((tag) => (
-                                    <option key={tag.id} value={tag.id}>
-                                        {tag.name}
-                                    </option>
-                                ))
-                            }
-                        </select>
-                        <button type="submit">Add tag</button>
+                        <fieldset>
+                            <legend>Select appropriate tags</legend>
+                            <div className="tags">
+                                {
+                                    tags.map((tag) => (
+                                        <label htmlFor={`${tag.id}`}>
+                                            <input type="checkbox" id={`${tag.id}`} name={`${tag.id}`} value={`${tag.id}`}
+                                                checked={selectedTags.has(tag.id)}
+                                                onChange={e => {
+                                                    const value = parseInt(e.target.value);
+                                                    const newTags = new Set([...selectedTags])
+
+                                                    if (newTags.has(value)) {
+                                                        newTags.delete(value);
+                                                    } else {
+                                                        newTags.add(value);
+                                                    }
+
+                                                    setSelectedTags(newTags);
+                                                }}
+                                            />
+                                            <span className="input-label">{tag.name}</span>
+                                        </label>
+                                    ))
+                                }
+                            </div>
+                        </fieldset>
+                        <button type="submit">Set tags</button>
                         <button onClick={() => setTagOverlayOpen(false)}>Close</button>
                     </form>
                 )}

@@ -116,3 +116,41 @@ form.TagOverlay {
         padding: var(--gap);
     }
 }
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap);
+}
+
+.tags label {
+    cursor: pointer;
+    position: relative;
+}
+
+.tags input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tags .input-label {
+    padding: calc(var(--gap) / 2);
+
+    background-color: navy;
+    color: aliceblue;
+    border: 2px solid cornflowerblue;
+
+    border-radius: 4px;
+
+    display: inline-block;
+}
+
+.tags input[type="checkbox"]:checked+.input-label {
+    background-color: cornflowerblue;
+    border-color: lightskyblue;
+}
+
+legend {
+    margin-bottom: calc(var(--gap) / 2);
+}
