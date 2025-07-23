@@ -22,7 +22,7 @@ export interface Photo {
 export type SortOptions = "newest" | "oldest" | "liked" | "viewed";
 
 interface PhotoFeedProps {
-    photos: Photo[]
+    photos: Map<number, Photo>
     tags: Tag[]
     loadMore: (sort: SortOptions) => void
     updatePhoto: (newPhoto: Photo) => void
@@ -106,13 +106,13 @@ export function PhotoFeed({ photos, tags, loadMore, resetPhotos, updatePhoto, ha
                 </select>
             </div>
             <div className="PhotoFeed" style={{ "--column-amount": zoomLevel } as React.CSSProperties}>
-                {photos.map(photo => (
+                {[...photos].map(([id, photo]) => (
                     <LazyImage
-                        key={photo.id}
-                        photoId={photo.id}
+                        key={id}
+                        photoId={id}
                         src={photo.url}
-                        alt={`Photo ${photo.id}`}
-                        onClick={() => setSelectedPhoto(photo.id)}
+                        alt={`Photo ${id}`}
+                        onClick={() => setSelectedPhoto(id)}
                         updatePhoto={updatePhoto}
                     />
                 ))}
@@ -127,10 +127,10 @@ export function PhotoFeed({ photos, tags, loadMore, resetPhotos, updatePhoto, ha
                 </div>
             )}
 
-            {selectedPhoto && (
+            {selectedPhoto && photos.has(selectedPhoto) && (
                 <PhotoViewer
                     tags={tags}
-                    photo={photos[selectedPhoto]}
+                    photo={photos.get(selectedPhoto)!}
                     updatePhoto={updatePhoto}
                     onClose={() => setSelectedPhoto(null)}
                 />

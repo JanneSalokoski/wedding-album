@@ -11,7 +11,7 @@ import type { SortOptions } from './components/PhotoFeed/PhotoFeed';
 import { getTags } from './api';
 
 export function App() {
-    const [photos, setPhotos] = useState<Photo[]>([]);
+    const [photos, setPhotos] = useState<Map<number, Photo>>(() => new Map());
     const seenIds = useRef(new Set<number>());
     const maxId = useRef<number>(0);
     const [offset, setOffset] = useState(0);
@@ -35,7 +35,16 @@ export function App() {
 
         if (filtered.length > 0) {
             maxId.current = Math.max(maxId.current, ...filtered.map(p => p.id))
-            setPhotos(prev => [...prev, ...filtered]);
+
+            setPhotos(prev => {
+                const updated = new Map(prev);
+                for (const photo of filtered) {
+                    updated.set(photo.id, photo);
+                }
+
+                return updated;
+            })
+
             setOffset(prev => prev + newPhotos.length);
             if (newPhotos.length < 20) setHasMore(false);
         }
@@ -44,13 +53,16 @@ export function App() {
     function resetPhotos() {
         seenIds.current.clear();
         maxId.current = 0;
-        setPhotos([]);
+        setPhotos(new Map());
         setOffset(0);
         setHasMore(true);
     }
 
     function updatePhoto(newPhoto: Photo) {
-        setPhotos((prev: Photo[]) => prev.map(old => (old.id === newPhoto.id) ? newPhoto : old))
+        const newPhotos = new Map([...photos]);
+        newPhotos.set(newPhoto.id, newPhoto);
+
+        setPhotos(newPhotos);
     }
 
     const loadLatestPhotos = async () => {
@@ -62,9 +74,14 @@ export function App() {
         const freshPhotos = newPhotos.filter(p => !seenIds.current.has(p.id));
         freshPhotos.forEach(p => seenIds.current.add(p.id));
 
+        const freshMap = new Map();
+        for (const photo of freshPhotos) {
+            freshMap.set(photo.id, photo);
+        }
+
         if (freshPhotos.length > 0) {
             maxId.current = Math.max(maxId.current, ...freshPhotos.map(p => p.id))
-            setPhotos(prev => [...freshPhotos, ...prev]);
+            setPhotos(prev => new Map([...freshMap, ...prev]));
         }
     };
 

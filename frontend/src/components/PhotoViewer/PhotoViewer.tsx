@@ -26,7 +26,7 @@ export function PhotoViewer({ photo, tags, onClose, updatePhoto }: PhotoViewerPr
 
         console.log("adding tag")
         addTag(photo.id, selectedTag, (res: Photo) => {
-            console.log(res);
+            console.log(res)
             updatePhoto(res);
             setTagOverlayOpen(false);
         });
