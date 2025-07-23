@@ -2,7 +2,7 @@ import "./PhotoViewer.css";
 
 import type { Photo, Tag } from "../PhotoFeed";
 import { useEffect, useState } from "react";
-import { setTags, sendView, addPerson, createPerson } from "../../api";
+import { setTags, sendView, createPerson, setPersons } from "../../api";
 import type { Person } from "../../types";
 
 interface PhotoViewerProps {
@@ -19,10 +19,12 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
     const [selectedTags, setSelectedTags] = useState<Set<number>>(() => new Set(photo.tags.map(t => t.id)));
     const [editableTags, setEditableTags] = useState<Tag[]>([]);
 
-    const [personOverlayOpen, setPersonOverlayOpen] = useState<boolean>(false);
+    const [selectedPersons, setSelectedPersons] = useState<Set<number>>(new Set(photo.persons.map(p => p.id)));
+
     const [newPersonName, setNewPersonName] = useState<string>("");
 
     const [editingTags, setEditingTags] = useState<boolean>(false);
+    const [addingPerson, setAddingPerson] = useState<boolean>(false);
 
     useEffect(() => {
         sendView(photo.id, (res: Photo) => {
@@ -32,7 +34,6 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
         refreshPersons();
     }, []);
 
-
     async function setNewTags() {
         const newPhoto = await setTags(photo.id, [...selectedTags]);
 
@@ -41,24 +42,40 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
         }
     }
 
-    function addNewPerson(event: React.FormEvent) {
-        event.preventDefault();
 
-        function callback(res: Photo) {
-            updatePhoto(res);
-            refreshPersons();
+    async function savePersonChanges(e: React.FormEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const trimmed = newPersonName.trim();
+        const selectedPerson = persons.find(p => p.name === trimmed);
+
+        // Copy the currently selected persons
+        const updatedPersonIds = new Set(selectedPersons);
+
+        if (trimmed !== "") {
+            if (!selectedPerson) {
+                const newPerson = await createPerson(trimmed);
+                refreshPersons();
+
+                updatedPersonIds.add(newPerson.id);
+            } else {
+                updatedPersonIds.add(selectedPerson.id);
+            }
+
+            setNewPersonName("");
         }
 
-        const person = persons.filter(p => p.name === newPersonName)[0];
-        if (person) {
-            addPerson(photo.id, person.id, callback);
+        setSelectedPersons(updatedPersonIds);
+
+        const newPhoto = await setPersons(photo.id, [...updatedPersonIds]);
+        if (newPhoto) {
+            updatePhoto(newPhoto);
         }
-        else {
-            createPerson(newPersonName, (p: Person) => {
-                addPerson(photo.id, p.id, callback);
-            })
-        }
+
+        setAddingPerson(false);
     }
+
 
     return (
         <div className="PhotoViewerOverlay" onClick={onClose}>
@@ -134,43 +151,71 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                     </li>
                 </ul>
                 <ul className="Persons">
-                    {
+                    {addingPerson ? (
+                        <form onSubmit={savePersonChanges}>
+                            <fieldset className="persons">
+                                {persons.filter(p => selectedPersons.has(p.id)).map(person => (
+                                    <li className="person" key={person.id}>
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                id={`person-${person.id}`}
+                                                value={person.id}
+                                                checked={selectedPersons.has(person.id)}
+                                                onChange={(e) => {
+                                                    const id = parseInt(e.target.value);
+                                                    const newSelected = new Set(selectedPersons);
+                                                    newSelected.has(id) ? newSelected.delete(id) : newSelected.add(id);
+                                                    setSelectedPersons(newSelected);
+                                                }}
+                                            />
+                                            <span>{person.name}</span>
+                                        </label>
+                                    </li>
+                                ))}
+                            </fieldset>
+
+                            <li>
+                                <input
+                                    type="text"
+                                    value={newPersonName}
+                                    onChange={e => setNewPersonName(e.target.value)}
+                                    list="person-options"
+                                />
+                            </li>
+
+                            <datalist id="person-options">
+                                {[...persons.values()].map(p => (
+                                    <option key={p.id} value={p.name} />
+                                ))}
+                            </datalist>
+
+                            <li className="NewPerson">
+                                <button type="submit">Save</button>
+                            </li>
+                            <li className="NewPerson">
+                                <button type="button" onClick={() => {
+                                    setAddingPerson(false)
+                                    setSelectedPersons(new Set(photo.persons.map(p => p.id)))
+                                }
+                                }>
+                                    Cancel
+                                </button>
+                            </li>
+                        </form>
+                    ) : (
                         photo.persons.map(person => (
                             <li key={person.id}>{person.name}</li>
                         ))
-                    }
-                    <li className="NewPerson">
-                        <label className="form-field">
-                            <button onClick={() => setPersonOverlayOpen(true)}>
-                                Add person
-                            </button>
-                        </label>
-                    </li>
+                    )}
+
+                    {!addingPerson && (
+                        <li className="NewPerson">
+                            <button onClick={() => setAddingPerson(true)}>Edit</button>
+                        </li>
+                    )}
                 </ul>
                 <button className="CloseViewer" onClick={onClose}>x</button>
-                {personOverlayOpen && (
-                    <form className="TagOverlay" onSubmit={addNewPerson}>
-                        <label className="form-field">
-                            <span className="field-label">
-                                Name
-                            </span>
-                            <input type="text"
-                                value={newPersonName}
-                                onChange={e => setNewPersonName(e.target.value)}
-                                list="person-options"
-                            />
-                            <datalist id="person-options">
-                                {
-                                    [...persons.values()].map(p => (
-                                        <option key={p.id} value={p.name} />
-                                    ))
-                                }
-                            </datalist>
-                        </label>
-                        <button type="submit">Add person</button>
-                        <button onClick={() => setPersonOverlayOpen(false)}>Close</button>
-                    </form>
-                )}
             </div>
         </div >
     )

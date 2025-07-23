@@ -57,7 +57,7 @@
 ul.Persons {
     list-style-type: none;
     display: flex;
-    gap: calc(var(--gap) / 2);
+    gap: calc(var(--gap) / 3);
 
     li {
         display: inline-flex;
@@ -87,6 +87,11 @@ ul.Persons {
             }
         }
     }
+}
+
+ul.Persons form,
+ul.Persons fieldset {
+    display: contents;
 }
 
 ul.Persons li {
