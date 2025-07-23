@@ -64,7 +64,8 @@
     z-index: 9999;
 }
 
-ul.Tags {
+ul.Tags,
+ul.Persons {
     list-style-type: none;
     display: flex;
     gap: calc(var(--gap) / 2);
@@ -84,8 +85,9 @@ ul.Tags {
 
         font-size: 0.8rem;
 
-        &.NewTag {
-            opacity: 0.5;
+        &.NewTag,
+        &.NewPerson {
+            opacity: 0.6;
 
             button {
                 background: none;
@@ -97,6 +99,11 @@ ul.Tags {
             }
         }
     }
+}
+
+ul.Persons li {
+    background-color: green;
+    border-color: lightgreen;
 }
 
 form.TagOverlay {
