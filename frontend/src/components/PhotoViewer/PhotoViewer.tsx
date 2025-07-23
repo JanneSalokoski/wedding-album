@@ -2,7 +2,7 @@ import "./PhotoViewer.css";
 
 import type { Photo, Tag } from "../PhotoFeed";
 import { useEffect, useState } from "react";
-import { addTag, setTags, sendView, addPerson, createPerson } from "../../api";
+import { setTags, sendView, addPerson, createPerson } from "../../api";
 import type { Person } from "../../types";
 
 interface PhotoViewerProps {
@@ -16,13 +16,13 @@ interface PhotoViewerProps {
 
 export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, updatePhoto }: PhotoViewerProps) {
 
-    const [tagOverlayOpen, setTagOverlayOpen] = useState<boolean>(false);
-    const [selectedTag, selectTag] = useState<number>(1);
-
     const [selectedTags, setSelectedTags] = useState<Set<number>>(new Set());
 
     const [personOverlayOpen, setPersonOverlayOpen] = useState<boolean>(false);
     const [newPersonName, setNewPersonName] = useState<string>("");
+
+    const [editingTags, setEditingTags] = useState<boolean>(false);
+
     useEffect(() => {
         sendView(photo.id, (res: Photo) => {
             updatePhoto(res);
@@ -31,17 +31,13 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
         refreshPersons();
     }, []);
 
-    async function addNewTag(event: React.FormEvent) {
-        event.preventDefault();
 
+    async function setNewTags() {
         const newPhoto = await setTags(photo.id, [...selectedTags]);
-        console.log(newPhoto);
 
         if (newPhoto) {
             updatePhoto(newPhoto);
         }
-
-        setTagOverlayOpen(false);
     }
 
     function addNewPerson(event: React.FormEvent) {
@@ -75,16 +71,49 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                 </div>
                 <ul className="Tags">
                     {
-                        photo.tags.map(tag => (
-                            <li key={tag.id}>{tag.name}</li>
-                        ))
+                        !editingTags ? (
+                            photo.tags.map(tag => (
+                                <li key={tag.id}>{tag.name}</li>
+                            )))
+                            : (
+                                <fieldset>
+                                    <div className="tags">
+                                        {
+                                            tags.map((tag) => (
+                                                <label htmlFor={`${tag.id}`}>
+                                                    <input type="checkbox" id={`${tag.id}`} name={`${tag.id}`} value={`${tag.id}`}
+                                                        checked={selectedTags.has(tag.id)}
+                                                        onChange={e => {
+                                                            const value = parseInt(e.target.value);
+                                                            const newTags = new Set([...selectedTags])
+
+                                                            if (newTags.has(value)) {
+                                                                newTags.delete(value);
+                                                            } else {
+                                                                newTags.add(value);
+                                                            }
+
+                                                            setSelectedTags(newTags);
+                                                        }}
+                                                    />
+                                                    <span className="input-label">{tag.name}</span>
+                                                </label>
+                                            ))
+                                        }
+                                    </div>
+                                </fieldset>
+                            )
                     }
-                    <li className="NewTag">
-                        <label className="form-field">
-                            <button onClick={() => setTagOverlayOpen(true)}>
-                                Add tag
-                            </button>
-                        </label>
+                    <li className="edit">
+                        <button onClick={() => {
+                            if (editingTags) {
+                                setNewTags();
+                            }
+
+                            setEditingTags(prev => !prev)
+                        }}>
+                            {editingTags ? "save" : (photo.tags.length === 0 ? "add" : "edit")}
+                        </button>
                     </li>
                 </ul>
                 <ul className="Persons">
@@ -102,39 +131,6 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                     </li>
                 </ul>
                 <button className="CloseViewer" onClick={onClose}>x</button>
-                {tagOverlayOpen && (
-                    <form className="TagOverlay" onSubmit={addNewTag}>
-                        <fieldset>
-                            <legend>Select appropriate tags</legend>
-                            <div className="tags">
-                                {
-                                    tags.map((tag) => (
-                                        <label htmlFor={`${tag.id}`}>
-                                            <input type="checkbox" id={`${tag.id}`} name={`${tag.id}`} value={`${tag.id}`}
-                                                checked={selectedTags.has(tag.id)}
-                                                onChange={e => {
-                                                    const value = parseInt(e.target.value);
-                                                    const newTags = new Set([...selectedTags])
-
-                                                    if (newTags.has(value)) {
-                                                        newTags.delete(value);
-                                                    } else {
-                                                        newTags.add(value);
-                                                    }
-
-                                                    setSelectedTags(newTags);
-                                                }}
-                                            />
-                                            <span className="input-label">{tag.name}</span>
-                                        </label>
-                                    ))
-                                }
-                            </div>
-                        </fieldset>
-                        <button type="submit">Set tags</button>
-                        <button onClick={() => setTagOverlayOpen(false)}>Close</button>
-                    </form>
-                )}
                 {personOverlayOpen && (
                     <form className="TagOverlay" onSubmit={addNewPerson}>
                         <label className="form-field">
