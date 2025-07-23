@@ -63,3 +63,49 @@
     align-items: center;
     z-index: 9999;
 }
+
+ul.Tags {
+    list-style-type: none;
+    display: flex;
+    gap: calc(var(--gap) / 2);
+
+    li {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: calc(var(--gap) / 3);
+
+        border: 2px solid indianred;
+        border-radius: 4px;
+
+        background-color: firebrick;
+        color: white;
+
+        font-size: 0.8rem;
+
+        &.NewTag {
+            opacity: 0.5;
+
+            button {
+                background: none;
+                border: none;
+            }
+
+            &:hover {
+                opacity: 0.8;
+            }
+        }
+    }
+}
+
+form.TagOverlay {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+
+    select,
+    button {
+        padding: var(--gap);
+    }
+}
