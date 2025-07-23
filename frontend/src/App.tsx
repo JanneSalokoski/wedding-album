@@ -1,20 +1,35 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 import './App.css';
 
-import type { Photo } from './components/PhotoFeed';
+import type { Photo, Tag } from './components/PhotoFeed';
 
 import { UploadForm } from './components/UploadForm';
 import { PhotoFeed } from './components/PhotoFeed';
 
 import type { SortOptions } from './components/PhotoFeed/PhotoFeed';
+import { getTags, getPersons } from './api';
+
+import type { Person } from './types';
 
 export function App() {
-    const [photos, setPhotos] = useState<Photo[]>([]);
+    const [photos, setPhotos] = useState<Map<number, Photo>>(() => new Map());
     const seenIds = useRef(new Set<number>());
     const maxId = useRef<number>(0);
     const [offset, setOffset] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+
+    const [tags, setTags] = useState<Tag[]>([]);
+    const [persons, setPersons] = useState<Person[]>([]);
+
+    useEffect(() => {
+        getTags((res: Tag[]) => setTags(res));
+        getPersons((res: Person[]) => setPersons(res));
+    }, [])
+
+    function refreshPersons() {
+        getPersons((res: Person[]) => setPersons(res));
+    }
 
     const [uploadFormOpen, setUploadFormOpen] = useState<boolean>(false);
 
@@ -28,7 +43,16 @@ export function App() {
 
         if (filtered.length > 0) {
             maxId.current = Math.max(maxId.current, ...filtered.map(p => p.id))
-            setPhotos(prev => [...prev, ...filtered]);
+
+            setPhotos(prev => {
+                const updated = new Map(prev);
+                for (const photo of filtered) {
+                    updated.set(photo.id, photo);
+                }
+
+                return updated;
+            })
+
             setOffset(prev => prev + newPhotos.length);
             if (newPhotos.length < 20) setHasMore(false);
         }
@@ -37,13 +61,16 @@ export function App() {
     function resetPhotos() {
         seenIds.current.clear();
         maxId.current = 0;
-        setPhotos([]);
+        setPhotos(new Map());
         setOffset(0);
         setHasMore(true);
     }
 
     function updatePhoto(newPhoto: Photo) {
-        setPhotos((prev: Photo[]) => prev.map(old => (old.id === newPhoto.id) ? newPhoto : old))
+        const newPhotos = new Map([...photos]);
+        newPhotos.set(newPhoto.id, newPhoto);
+
+        setPhotos(newPhotos);
     }
 
     const loadLatestPhotos = async () => {
@@ -55,9 +82,14 @@ export function App() {
         const freshPhotos = newPhotos.filter(p => !seenIds.current.has(p.id));
         freshPhotos.forEach(p => seenIds.current.add(p.id));
 
+        const freshMap = new Map();
+        for (const photo of freshPhotos) {
+            freshMap.set(photo.id, photo);
+        }
+
         if (freshPhotos.length > 0) {
             maxId.current = Math.max(maxId.current, ...freshPhotos.map(p => p.id))
-            setPhotos(prev => [...freshPhotos, ...prev]);
+            setPhotos(prev => new Map([...freshMap, ...prev]));
         }
     };
 
@@ -65,6 +97,9 @@ export function App() {
         <div className="App">
             <PhotoFeed
                 photos={photos}
+                tags={tags}
+                persons={persons}
+                refreshPersons={refreshPersons}
                 loadMore={loadPhotos}
                 resetPhotos={resetPhotos}
                 updatePhoto={updatePhoto}

@@ -5,7 +5,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    z-index: 9998;
 }
 
 .PhotoViewerContent {
@@ -52,4 +52,133 @@
     padding: var(--gap);
 
     cursor: pointer;
+}
+
+ul.Persons {
+    list-style-type: none;
+    display: flex;
+    gap: calc(var(--gap) / 3);
+
+    li {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: calc(var(--gap) / 3);
+
+        border: 2px solid indianred;
+        border-radius: 4px;
+
+        background-color: firebrick;
+        color: white;
+
+        font-size: 0.8rem;
+
+        &.NewPerson {
+            opacity: 0.6;
+
+            button {
+                background: none;
+                border: none;
+            }
+
+            &:hover {
+                opacity: 0.8;
+            }
+        }
+    }
+}
+
+ul.Persons form,
+ul.Persons fieldset {
+    display: contents;
+}
+
+ul.Persons li {
+    background-color: green;
+    border-color: lightgreen;
+}
+
+.tags {
+    display: contents;
+    border: none;
+}
+
+.tag-label {
+    position: relative;
+    cursor: pointer;
+}
+
+.tag-label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tag-chip {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0.25rem 0.5rem;
+
+    border-radius: 4px;
+    border: 2px solid indianred;
+
+    background-color: firebrick;
+    color: white;
+    opacity: 0.5;
+
+    font-size: 0.8rem;
+
+    transition: opacity 0.2s, border-color 0.2s;
+}
+
+.tag-label input[type="checkbox"]:checked+.tag-chip {
+    opacity: 1;
+}
+
+.tag-chip.static {
+    opacity: 1;
+}
+
+ul.Tags {
+    list-style-type: none;
+
+    display: flex;
+    flex-wrap: break;
+
+    gap: calc(var(--gap) / 3);
+}
+
+ul.Tags li.edit {
+    padding: 0;
+    background: none;
+    border: none;
+}
+
+ul.Tags li.edit button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0.25rem 0.5rem;
+    border: 2px solid firebrick;
+    border-radius: 4px;
+
+    background-color: darkred;
+    color: white;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+ul.Tags li.edit button:hover {
+    border-color: indianred;
+}
+
+.subtitle {
+    width: 5rem;
+    font-size: 0.9rem;
 }

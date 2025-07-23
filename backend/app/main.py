@@ -8,7 +8,16 @@ from app.r2_utils import (
 from uuid import uuid4
 from sqlmodel import SQLModel, Session, select
 from app.database import engine, get_session
-from app.models import Photo, PhotoRead
+from app.models import (
+    DBPhoto,
+    PublicPhoto,
+    DBTag,
+    PublicTag,
+    CreateTag,
+    DBPerson,
+    PublicPerson,
+    CreatePerson,
+)
 
 from enum import Enum
 
@@ -37,7 +46,7 @@ async def upload_file(
         Bucket=R2_BUCKET, Key=object_key, Body=contents, ContentType=file.content_type
     )
 
-    photo = Photo(key=object_key, content_type=file.content_type)
+    photo = DBPhoto(key=object_key, content_type=file.content_type)
     session.add(photo)
     session.commit()
     session.refresh(photo)
@@ -52,42 +61,117 @@ class SortOption(str, Enum):
     viewed = "viewed"
 
 
-@app.get("/photos", response_model=list[PhotoRead])
+@app.get("/photos", response_model=list[PublicPhoto])
 def list_photos(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     sort: SortOption = Query(SortOption.newest),
     session: Session = Depends(get_session),
 ):
-    query = select(Photo)
+    query = select(DBPhoto)
 
     if sort == SortOption.newest:
-        query = query.order_by(Photo.uploaded_at.desc())
+        query = query.order_by(DBPhoto.uploaded_at.desc())
     elif sort == SortOption.oldest:
-        query = query.order_by(Photo.uploaded_at.asc())
+        query = query.order_by(DBPhoto.uploaded_at.asc())
     elif sort == SortOption.liked:
-        query = query.order_by(Photo.likes.desc())
+        query = query.order_by(DBPhoto.likes.desc())
     elif sort == SortOption.viewed:
-        query = query.order_by(Photo.views.desc())
+        query = query.order_by(DBPhoto.views.desc())
 
     photos = session.exec(query.offset(offset).limit(limit)).all()
 
-    return [
-        {
-            "id": photo.id,
-            "key": photo.key,
-            "likes": photo.likes,
-            "views": photo.views,
-            "uploaded_at": photo.uploaded_at,
-            "url": generate_presigned_view_url(photo.key),
-        }
-        for photo in photos
-    ]
+    for photo in photos:
+        photo.url = generate_presigned_view_url(photo.key)
+
+    return photos
 
 
-@app.post("/views/{photo_id}")
+@app.post("/photos/{photo_id}/tags/{tag_id}", response_model=PublicPhoto)
+def add_tag_to_photo(
+    photo_id: int, tag_id: int, session: Session = Depends(get_session)
+):
+    photo = session.get(DBPhoto, photo_id)
+    tag = session.get(DBTag, tag_id)
+
+    if not photo or not tag:
+        raise HTTPException(status_code=404, detail="Photo or tag not found")
+
+    if tag not in photo.tags:
+        photo.tags.append(tag)
+        session.add(photo)
+        session.commit()
+        session.refresh(photo)
+
+    photo.url = generate_presigned_view_url(photo.key)
+
+    return photo
+
+
+@app.post("/photos/{photo_id}/tags", response_model=PublicPhoto)
+def set_tags(
+    photo_id: int, tag_ids: list[int], session: Session = Depends(get_session)
+):
+    photo = session.get(DBPhoto, photo_id)
+    tags = [session.get(DBTag, id) for id in tag_ids]
+
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    photo.tags = tags
+    session.add(photo)
+    session.commit()
+    session.refresh(photo)
+
+    photo.url = generate_presigned_view_url(photo.key)
+
+    return photo
+
+
+@app.post("/photos/{photo_id}/persons", response_model=PublicPhoto)
+def set_persons(
+    photo_id: int, person_ids: list[int], session: Session = Depends(get_session)
+):
+    photo = session.get(DBPhoto, photo_id)
+    persons = [session.get(DBPerson, id) for id in person_ids]
+
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    photo.persons = persons
+    session.add(photo)
+    session.commit()
+    session.refresh(photo)
+
+    photo.url = generate_presigned_view_url(photo.key)
+
+    return photo
+
+
+@app.post("/photos/{photo_id}/persons/{person_id}", response_model=PublicPhoto)
+def add_person_to_photo(
+    photo_id: int, person_id: int, session: Session = Depends(get_session)
+):
+    photo = session.get(DBPhoto, photo_id)
+    person = session.get(DBPerson, person_id)
+
+    if not photo or not person:
+        raise HTTPException(status_code=404, detail="Photo or person not found")
+
+    if person not in photo.tags:
+        photo.persons.append(person)
+        session.add(photo)
+        session.commit()
+        session.refresh(photo)
+
+    photo.url = generate_presigned_view_url(photo.key)
+
+    return photo
+
+
+@app.post("/views/{photo_id}", response_model=PublicPhoto)
 def view_photo(photo_id: int, session: Session = Depends(get_session)):
-    photo = session.exec(select(Photo).where(Photo.id == photo_id)).first()
+    photo = session.exec(select(DBPhoto).where(DBPhoto.id == photo_id)).first()
 
     if not photo:
         raise HTTPException(status_code=404, details="Photo not found")
@@ -97,19 +181,14 @@ def view_photo(photo_id: int, session: Session = Depends(get_session)):
     session.commit()
     session.refresh(photo)
 
-    return {
-        "id": photo.id,
-        "key": photo.key,
-        "likes": photo.likes,
-        "views": photo.views,
-        "uploaded_at": photo.uploaded_at,
-        "url": generate_presigned_view_url(photo.key),
-    }
+    photo.url = generate_presigned_view_url(photo.key)
+
+    return photo
 
 
-@app.post("/likes/{photo_id}")
+@app.post("/likes/{photo_id}", response_model=PublicPhoto)
 def like_photo(photo_id: int, session: Session = Depends(get_session)):
-    photo = session.exec(select(Photo).where(Photo.id == photo_id)).first()
+    photo = session.exec(select(DBPhoto).where(DBPhoto.id == photo_id)).first()
 
     if not photo:
         raise HTTPException(status_code=404, details="Photo not found")
@@ -119,11 +198,98 @@ def like_photo(photo_id: int, session: Session = Depends(get_session)):
     session.commit()
     session.refresh(photo)
 
-    return {
-        "id": photo.id,
-        "key": photo.key,
-        "likes": photo.likes,
-        "views": photo.views,
-        "uploaded_at": photo.uploaded_at,
-        "url": generate_presigned_view_url(photo.key),
-    }
+    photo.url = generate_presigned_view_url(photo.key)
+
+    return photo
+
+
+@app.get("/tags", response_model=list[PublicTag])
+def view_tags(session: Session = Depends(get_session)):
+    tags = session.exec(select(DBTag)).all()
+
+    return tags
+
+
+@app.get("/tags/{tag_id}", response_model=PublicTag)
+def view_tag(tag_id: int, session: Session = Depends(get_session)):
+    tag = session.exec(select(DBTag).where(DBTag.id == tag_id)).first()
+
+    if not tag:
+        raise HTTPException(status_code=404, details="Tag not found")
+
+    return tag
+
+
+@app.post("/tags", response_model=PublicTag)
+def create_tag(tag: CreateTag, session: Session = Depends(get_session)):
+    db_tag = DBTag.model_validate(tag)
+
+    session.add(db_tag)
+    session.commit()
+    session.refresh(db_tag)
+
+    return db_tag
+
+
+@app.patch("/tags/{tag_id}", response_model=PublicTag)
+def update_tag(tag_id: int, tag: CreateTag, session: Session = Depends(get_session)):
+    db_tag = session.exec(select(DBTag).where(DBTag.id == tag_id)).first()
+
+    if not db_tag:
+        raise HTTPException(status_code=404, details="Tag not found")
+
+    data = tag.model_dump(exclude_unset=True)
+    db_tag.sqlmodel_update(data)
+
+    session.add(db_tag)
+    session.commit()
+    session.refresh(tag)
+
+    return db_tag
+
+
+@app.get("/persons", response_model=list[PublicPerson])
+def view_persons(session: Session = Depends(get_session)):
+    persons = session.exec(select(DBPerson)).all()
+
+    return persons
+
+
+@app.get("/persons/{person_id}", response_model=PublicPerson)
+def view_person(person_id: int, session: Session = Depends(get_session)):
+    person = session.exec(select(DBPerson).where(DBPerson.id == person_id)).first()
+
+    if not person:
+        raise HTTPException(status_code=404, details="Person not found")
+
+    return person
+
+
+@app.post("/persons", response_model=PublicPerson)
+def create_person(person: CreatePerson, session: Session = Depends(get_session)):
+    db_person = DBPerson.model_validate(person)
+
+    session.add(db_person)
+    session.commit()
+    session.refresh(db_person)
+
+    return db_person
+
+
+@app.patch("/persons/{person_id}", response_model=PublicPerson)
+def update_person(
+    person_id: int, person: CreatePerson, session: Session = Depends(get_session)
+):
+    db_person = session.exec(select(DBPerson).where(DBPerson.id == person_id)).first()
+
+    if not db_person:
+        raise HTTPException(status_code=404, details="Person not found")
+
+    data = person.model_dump(exclude_unset=True)
+    db_person.sqlmodel_update(data)
+
+    session.add(db_person)
+    session.commit()
+    session.refresh(person)
+
+    return db_person

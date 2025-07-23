@@ -4,6 +4,12 @@ import { LazyImage } from "../LazyImage";
 import { PhotoViewer } from "../PhotoViewer";
 
 import "./PhotoFeed.css";
+import type { Person } from "../../types";
+
+export interface Tag {
+    id: number;
+    name: string;
+}
 
 export interface Photo {
     id: number;
@@ -11,19 +17,24 @@ export interface Photo {
     likes: number;
     views: number;
     uploaded_at: string;
+    tags: Tag[];
+    persons: Person[];
 }
 
 export type SortOptions = "newest" | "oldest" | "liked" | "viewed";
 
 interface PhotoFeedProps {
-    photos: Photo[]
+    photos: Map<number, Photo>
+    tags: Tag[]
+    persons: Person[]
+    refreshPersons: () => void
     loadMore: (sort: SortOptions) => void
     updatePhoto: (newPhoto: Photo) => void
     resetPhotos: () => void
     hasMore: boolean
 }
 
-export function PhotoFeed({ photos, loadMore, resetPhotos, updatePhoto, hasMore }: PhotoFeedProps) {
+export function PhotoFeed({ photos, tags, persons, refreshPersons, loadMore, resetPhotos, updatePhoto, hasMore }: PhotoFeedProps) {
     const observerRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -32,7 +43,7 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, updatePhoto, hasMore 
 
     const [zoomLevel, setZoomLevel] = useState<string>("4");
     const [sortOption, setSortOption] = useState<SortOptions>("newest");
-    const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+    const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
 
     useEffect(() => {
         const container = scrollContainerRef.current;
@@ -99,13 +110,13 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, updatePhoto, hasMore 
                 </select>
             </div>
             <div className="PhotoFeed" style={{ "--column-amount": zoomLevel } as React.CSSProperties}>
-                {photos.map(photo => (
+                {[...photos].map(([id, photo]) => (
                     <LazyImage
-                        key={photo.id}
-                        photoId={photo.id}
+                        key={id}
+                        photoId={id}
                         src={photo.url}
-                        alt={`Photo ${photo.id}`}
-                        onClick={() => setSelectedPhoto(photo)}
+                        alt={`Photo ${id}`}
+                        onClick={() => setSelectedPhoto(id)}
                         updatePhoto={updatePhoto}
                     />
                 ))}
@@ -120,9 +131,12 @@ export function PhotoFeed({ photos, loadMore, resetPhotos, updatePhoto, hasMore 
                 </div>
             )}
 
-            {selectedPhoto && (
+            {selectedPhoto && photos.has(selectedPhoto) && (
                 <PhotoViewer
-                    photo={selectedPhoto}
+                    tags={tags}
+                    persons={persons}
+                    refreshPersons={refreshPersons}
+                    photo={photos.get(selectedPhoto)!}
                     updatePhoto={updatePhoto}
                     onClose={() => setSelectedPhoto(null)}
                 />
