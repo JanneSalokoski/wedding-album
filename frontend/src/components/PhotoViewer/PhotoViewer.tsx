@@ -2,7 +2,7 @@ import "./PhotoViewer.css";
 
 import type { Photo, Tag } from "../PhotoFeed";
 import { useEffect, useState } from "react";
-import { setTags, sendView, createPerson, setPersons } from "../../api";
+import { setTags, sendView, createPerson, setPersons, flagPhoto } from "../../api";
 import type { Person } from "../../types";
 
 interface PhotoViewerProps {
@@ -12,9 +12,10 @@ interface PhotoViewerProps {
     refreshPersons: () => void;
     onClose: () => void;
     updatePhoto: (res: Photo) => void;
+    resetPhotos: () => void;
 }
 
-export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, updatePhoto }: PhotoViewerProps) {
+export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, updatePhoto, resetPhotos }: PhotoViewerProps) {
 
     const [selectedTags, setSelectedTags] = useState<Set<number>>(() => new Set(photo.tags.map(t => t.id)));
     const [editableTags, setEditableTags] = useState<Tag[]>([]);
@@ -217,6 +218,18 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                         </li>
                     )}
                 </ul>
+                <div className="ReportPhoto">
+                    <button className="report-button"
+                        onClick={() => {
+                            const response = confirm("Are you sure you want to report this image?")
+                            if (response) {
+                                flagPhoto(photo.id)
+                                resetPhotos();
+                                onClose();
+                            }
+                        }}
+                    >Report image</button>
+                </div>
                 <button className="CloseViewer" onClick={onClose}>x</button>
             </div>
         </div >

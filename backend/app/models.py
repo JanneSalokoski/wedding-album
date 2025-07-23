@@ -26,6 +26,7 @@ class DBPhoto(BasePhoto, table=True):
     url: str | None
     views: int = 0
     likes: int = 0
+    flagged: bool = False
     content_type: Optional[str]
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
 
