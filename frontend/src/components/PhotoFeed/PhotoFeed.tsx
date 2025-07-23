@@ -139,6 +139,7 @@ export function PhotoFeed({ photos, tags, persons, refreshPersons, loadMore, res
                     photo={photos.get(selectedPhoto)!}
                     updatePhoto={updatePhoto}
                     onClose={() => setSelectedPhoto(null)}
+                    resetPhotos={resetPhotos}
                 />
             )}
         </div>
