@@ -76,7 +76,7 @@ class DBPerson(BasePerson, table=True):
 
 
 class PublicPerson(BasePerson):
-    pass
+    id: int
 
 
 class CreatePerson(BasePerson):
