@@ -8,7 +8,9 @@ import { UploadForm } from './components/UploadForm';
 import { PhotoFeed } from './components/PhotoFeed';
 
 import type { SortOptions } from './components/PhotoFeed/PhotoFeed';
-import { getTags } from './api';
+import { getTags, getPersons } from './api';
+
+import type { Person } from './types';
 
 export function App() {
     const [photos, setPhotos] = useState<Map<number, Photo>>(() => new Map());
@@ -18,10 +20,16 @@ export function App() {
     const [hasMore, setHasMore] = useState(true);
 
     const [tags, setTags] = useState<Tag[]>([]);
+    const [persons, setPersons] = useState<Person[]>([]);
 
     useEffect(() => {
         getTags((res: Tag[]) => setTags(res));
+        getPersons((res: Person[]) => setPersons(res));
     }, [])
+
+    function refreshPersons() {
+        getPersons((res: Person[]) => setPersons(res));
+    }
 
     const [uploadFormOpen, setUploadFormOpen] = useState<boolean>(false);
 
@@ -90,6 +98,8 @@ export function App() {
             <PhotoFeed
                 photos={photos}
                 tags={tags}
+                persons={persons}
+                refreshPersons={refreshPersons}
                 loadMore={loadPhotos}
                 resetPhotos={resetPhotos}
                 updatePhoto={updatePhoto}

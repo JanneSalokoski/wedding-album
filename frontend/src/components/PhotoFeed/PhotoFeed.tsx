@@ -4,6 +4,7 @@ import { LazyImage } from "../LazyImage";
 import { PhotoViewer } from "../PhotoViewer";
 
 import "./PhotoFeed.css";
+import type { Person } from "../../types";
 
 export interface Tag {
     id: number;
@@ -17,6 +18,7 @@ export interface Photo {
     views: number;
     uploaded_at: string;
     tags: Tag[];
+    persons: Person[];
 }
 
 export type SortOptions = "newest" | "oldest" | "liked" | "viewed";
@@ -24,13 +26,15 @@ export type SortOptions = "newest" | "oldest" | "liked" | "viewed";
 interface PhotoFeedProps {
     photos: Map<number, Photo>
     tags: Tag[]
+    persons: Person[]
+    refreshPersons: () => void
     loadMore: (sort: SortOptions) => void
     updatePhoto: (newPhoto: Photo) => void
     resetPhotos: () => void
     hasMore: boolean
 }
 
-export function PhotoFeed({ photos, tags, loadMore, resetPhotos, updatePhoto, hasMore }: PhotoFeedProps) {
+export function PhotoFeed({ photos, tags, persons, refreshPersons, loadMore, resetPhotos, updatePhoto, hasMore }: PhotoFeedProps) {
     const observerRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -130,6 +134,8 @@ export function PhotoFeed({ photos, tags, loadMore, resetPhotos, updatePhoto, ha
             {selectedPhoto && photos.has(selectedPhoto) && (
                 <PhotoViewer
                     tags={tags}
+                    persons={persons}
+                    refreshPersons={refreshPersons}
                     photo={photos.get(selectedPhoto)!}
                     updatePhoto={updatePhoto}
                     onClose={() => setSelectedPhoto(null)}
