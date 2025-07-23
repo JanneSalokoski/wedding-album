@@ -68,7 +68,7 @@ def list_photos(
     sort: SortOption = Query(SortOption.newest),
     session: Session = Depends(get_session),
 ):
-    query = select(DBPhoto)
+    query = select(DBPhoto).where(DBPhoto.flagged == False)
 
     if sort == SortOption.newest:
         query = query.order_by(DBPhoto.uploaded_at.desc())
@@ -167,6 +167,23 @@ def add_person_to_photo(
     photo.url = generate_presigned_view_url(photo.key)
 
     return photo
+
+
+@app.post("/photos/{photo_id}/flag")
+def flag_image(photo_id: int, session: Session = Depends(get_session)):
+    photo = session.exec(select(DBPhoto).where(DBPhoto.id == photo_id)).first()
+
+    if not photo:
+        raise HTTPException(status_code=404, details="Photo not found")
+
+    photo.flagged = True
+    session.add(photo)
+    session.commit()
+    session.refresh(photo)
+
+    print(photo)
+
+    return {"status": "ok"}
 
 
 @app.post("/views/{photo_id}", response_model=PublicPhoto)
