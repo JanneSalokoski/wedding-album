@@ -6,9 +6,10 @@ import "./UploadForm.css";
 
 interface UploadFormProps {
     onSuccess?: () => void
+    onCancel: () => void
 }
 
-export function UploadForm({ onSuccess }: UploadFormProps) {
+export function UploadForm({ onSuccess, onCancel }: UploadFormProps) {
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     type UploadStatus =
@@ -134,8 +135,9 @@ export function UploadForm({ onSuccess }: UploadFormProps) {
         <form className="UploadForm" onSubmit={handleUploads}>
             <h2>Upload Photos</h2>
             <label className="form-field" htmlFor="file">
-                <span className="form-label">Select photos to upload</span>
+                <span className="form-label">Select photos to upload:</span>
                 <input type="file"
+                    className="blue"
                     accept="image/*"
                     multiple={true}
                     onChange={handleFileChange}
@@ -147,33 +149,36 @@ export function UploadForm({ onSuccess }: UploadFormProps) {
                     <li key={file.name} className="CandidatePhoto">
                         <img className="preview" src={previewUrls[idx]} alt={file.name} />
                         <ul className="file-info">
-                            <li className="filename">Filename: {file.name}</li>
+                            {/* <li className="filename">Filename: {file.name}</li> */}
                             <li className="filesize">Size: {formatFileSize(file.size)}</li>
                             <li className="status">
-                                Status: {
+                                {
                                     (() => {
                                         const status = statusMessages[idx];
 
                                         if (!status) {
-                                            return "Pending";
+                                            return "";
                                         }
 
                                         switch (status.type) {
-                                            case "pending": return "Pending";
-                                            case "uploading": return "Uploading...";
-                                            case "uploaded": return `Uploaded as ${status.key}`;
+                                            case "pending": return "";
+                                            case "uploading": return "...";
+                                            case "uploaded": return `Uploaded!`;
                                             case "error": return `Error: ${status.message}`;
                                         }
                                     })()
                                 }
                             </li>
                         </ul>
-                        <button type="button" onClick={() => removeFile(idx)}>Remove</button>
+                        <button type="button" className="red" onClick={() => removeFile(idx)}>Remove</button>
                     </li>
                 ))}
             </ol>
 
-            <button type="submit" disabled={!files || files.length === 0 || globalStatus !== "idle"}>Upload</button>
+            <div className="buttons">
+                <button className="blue" type="submit" disabled={!files || files.length === 0 || globalStatus !== "idle"}>Upload</button>
+                <button className="red" onClick={onCancel}>Cancel</button>
+            </div>
 
             {globalStatus === "done" && (
                 <div className="global-status success">All files uploaded</div>
