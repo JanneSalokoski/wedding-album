@@ -105,11 +105,10 @@ export function App() {
                 updatePhoto={updatePhoto}
                 hasMore={hasMore}
             />
-            <button className="OpenUploadForm" onClick={() => setUploadFormOpen((prev) => !prev)}>Upload photos</button>
+            <button className="OpenUploadForm" onClick={() => setUploadFormOpen(true)}>Upload photos</button>
             {uploadFormOpen && (
                 <div className="UploadFormOverlay">
-                    <button className="close-form" onClick={() => setUploadFormOpen(false)}>Cancel</button>
-                    <UploadForm onSuccess={loadLatestPhotos} />
+                    <UploadForm onSuccess={loadLatestPhotos} onCancel={() => setUploadFormOpen(false)} />
                 </div>
             )}
         </div>
