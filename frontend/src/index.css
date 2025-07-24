@@ -12,7 +12,11 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 
+    --gap-xs: calc(var(--gap) * 0.25);
+    --gap-s: calc(var(--gap) * 0.5);
     --gap: 1rem;
+    --gap-l: calc(var(--gap) * 1.5);
+    --gap-xl: calc(var(--gap) * 2);
 }
 
 * {
@@ -29,4 +33,45 @@ body,
 body {
     width: 100vw;
     height: 100vh;
+}
+
+input,
+button,
+submit,
+textarea {
+    box-sizing: border-box;
+
+    border: none;
+    border-radius: 4px;
+
+    padding: var(--gap-s) var(--gap) var(--gap-s) var(--gap);
+
+    background-color: #222;
+    color: #ddd;
+
+    font-family: inherit;
+    font-size: 0.8rem;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: 200ms;
+
+    &:hover {
+        background-color: #333;
+    }
+
+    &:active {
+        background-color: #444;
+    }
+
+    &:disabled {
+        color: #777;
+    }
+}
+
+input[type="text"],
+textarea {
+    border: 1px solid #333;
 }
