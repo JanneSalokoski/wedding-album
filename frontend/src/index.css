@@ -3,9 +3,6 @@
     line-height: 1.5;
     font-weight: 400;
 
-    color-scheme: light dark;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -17,6 +14,66 @@
     --gap: 1rem;
     --gap-l: calc(var(--gap) * 1.5);
     --gap-xl: calc(var(--gap) * 2);
+
+    --color-black-0: rgb(00, 00, 10);
+    --color-black-1: rgb(10, 10, 20);
+    --color-black-2: rgb(20, 20, 30);
+    --color-black-3: rgb(30, 30, 40);
+    --color-black-4: rgb(40, 40, 50);
+    --color-black-5: rgb(50, 50, 60);
+
+    --color-gray-0: rgb(80, 80, 90);
+    --color-gray-1: rgb(90, 90, 100);
+    --color-gray-2: rgb(100, 100, 110);
+    --color-gray-3: rgb(110, 110, 120);
+    --color-gray-4: rgb(120, 120, 130);
+    --color-gray-5: rgb(130, 130, 140);
+
+    --color-white-0: rgb(255, 255, 255);
+    --color-white-1: rgb(255, 245, 245);
+    --color-white-2: rgb(245, 235, 235);
+    --color-white-3: rgb(235, 225, 225);
+    --color-white-4: rgb(225, 215, 215);
+    --color-white-5: rgb(215, 205, 205);
+
+    --color-darkred-0: rgb(60, 30, 30);
+    --color-darkred-1: rgb(80, 40, 40);
+    --color-darkred-2: rgb(100, 40, 40);
+    --color-darkred-3: rgb(120, 50, 50);
+    --color-darkred-4: rgb(140, 50, 50);
+    --color-darkred-5: rgb(160, 60, 60);
+
+    --color-lightred-0: rgb(160, 170, 170);
+    --color-lightred-1: rgb(180, 180, 180);
+    --color-lightred-2: rgb(200, 180, 180);
+    --color-lightred-3: rgb(220, 190, 190);
+    --color-lightred-4: rgb(240, 190, 190);
+    --color-lightred-5: rgb(255, 200, 200);
+
+    --color-pink-0: rgb(90, 60, 60);
+    --color-pink-1: rgb(100, 70, 70);
+    --color-pink-2: rgb(110, 80, 80);
+    --color-pink-3: rgb(120, 90, 90);
+    --color-pink-4: rgb(130, 100, 100);
+
+    --color-orange-0: rgb(80, 65, 45);
+    --color-orange-1: rgb(90, 75, 55);
+    --color-orange-2: rgb(110, 95, 75);
+    --color-orange-3: rgb(120, 105, 85);
+    --color-orange-4: rgb(130, 115, 95);
+
+    --color-blue-0: rgb(55, 65, 90);
+    --color-blue-1: rgb(65, 75, 100);
+    --color-blue-2: rgb(75, 85, 110);
+    --color-blue-3: rgb(85, 95, 120);
+    --color-blue-4: rgb(95, 105, 130);
+
+    --color-fg: var(--color-white-2);
+    --color-bg: var(--color-black-2);
+
+    color-scheme: light dark;
+    color: var(--color-fg);
+    background-color: var(--color-bg);
 }
 
 * {
@@ -38,7 +95,8 @@ body {
 input,
 button,
 submit,
-textarea {
+textarea,
+select {
     box-sizing: border-box;
 
     border: none;
@@ -46,8 +104,8 @@ textarea {
 
     padding: var(--gap-s) var(--gap) var(--gap-s) var(--gap);
 
-    background-color: #222;
-    color: #ddd;
+    background-color: var(--color-black-3);
+    color: var(--color-white-3);
 
     font-family: inherit;
     font-size: 0.8rem;
@@ -56,22 +114,56 @@ textarea {
     align-items: center;
     justify-content: center;
 
-    transition: 200ms;
+    transition: 100ms;
 
     &:hover {
-        background-color: #333;
+        background-color: var(--color-black-4);
     }
 
     &:active {
-        background-color: #444;
+        background-color: var(--color-black-5);
     }
 
     &:disabled {
-        color: #777;
+        color: var(--color-gray-0);
     }
 }
 
 input[type="text"],
 textarea {
-    border: 1px solid #333;
+    border: 1px solid var(--color-gray-0);
+}
+
+button.red,
+submit.red {
+    background-color: var(--color-darkred-0);
+    color: var(--color-lightred-5);
+
+    &:hover {
+        background-color: var(--color-darkred-1);
+    }
+
+    &:active {
+        background-color: var(--color-darkred-2);
+    }
+}
+
+button.blue,
+submit.blue,
+input.blue {
+    background-color: var(--color-blue-1);
+    color: var(--color-white-3);
+
+    &:hover {
+        background-color: var(--color-blue-2);
+    }
+
+    &:active {
+        background-color: var(--color-blue-3);
+    }
+
+    &:disabled {
+        background-color: var(--color-blue-0);
+        color: var(--color-gray-5);
+    }
 }
