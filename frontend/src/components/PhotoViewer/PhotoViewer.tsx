@@ -125,7 +125,7 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                                                         setSelectedTags(updated);
                                                     }}
                                                 />
-                                                <span className="chip">{tag.name}</span>
+                                                <span>{tag.name}</span>
                                             </label></li>
                                         );
                                     })}
@@ -241,7 +241,7 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                     )}
                 </ul>
                 <div className="ReportPhoto">
-                    <button className="report-button"
+                    <button className="red report-button"
                         onClick={() => {
                             const response = confirm("Are you sure you want to report this image?")
                             if (response) {

@@ -120,6 +120,22 @@
     }
 }
 
+.Persons .chip {
+    background-color: var(--color-pink-2);
+}
+
+.Tags li.chip:has(input[type="checkbox"]) {
+    background-color: var(--color-orange-0);
+}
+
+.Tags li.chip:has(input[type="checkbox"]:checked) {
+    background-color: var(--color-orange-2);
+}
+
+.Tags .chip {
+    background-color: var(--color-orange-2);
+}
+
 fieldset,
 .Persons form {
     display: contents;
