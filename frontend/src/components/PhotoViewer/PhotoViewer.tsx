@@ -1,7 +1,7 @@
 import "./PhotoViewer.css";
 
 import type { Photo, Tag } from "../PhotoFeed";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { setTags, sendView, createPerson, setPersons, flagPhoto } from "../../api";
 import type { Person } from "../../types";
 
@@ -26,6 +26,10 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
 
     const [editingTags, setEditingTags] = useState<boolean>(false);
     const [addingPerson, setAddingPerson] = useState<boolean>(false);
+
+    const [inputFocused, setInputFocused] = useState<boolean>(false);
+
+    const nameRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         sendView(photo.id, (res: Photo) => {
@@ -79,17 +83,29 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
 
 
     return (
-        <div className="PhotoViewerOverlay" onClick={onClose}>
-            <div className="PhotoViewerContent" onClick={(e) => e.stopPropagation()}>
+        <div className="PhotoViewerOverlay" onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+        }} >
+            <button className="CloseViewer" onClick={onClose}>x</button>
+            <div className="PhotoViewerContent" onClick={(e) => e.stopPropagation()}
+                style={{ paddingBottom: inputFocused ? undefined : undefined }}
+            >
                 <img src={photo.url} alt={`Photo ${photo.id}`} />
                 <div className="PhotoDetails">
                     <p className="likes">Likes: {photo.likes}</p>
                     <p className="views">Views: {photo.views}</p>
                     <p className="spacer"></p>
-                    <p className="uploaded">Date: {new Date(photo.uploaded_at).toLocaleString()}</p>
+                    <p className="uploaded">{new Date(photo.uploaded_at).toLocaleString(undefined, {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    })}</p>
                 </div>
+                {/* <span className="subtitle">Tags:</span> */}
                 <ul className="Tags">
-                    <span className="subtitle">Tags:</span>
                     {
                         editingTags ? (
                             <>
@@ -97,7 +113,7 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                                     {editableTags.map(tag => {
                                         const isChecked = selectedTags.has(tag.id);
                                         return (
-                                            <li><label key={tag.id} htmlFor={`tag-${tag.id}`} className="tag-label">
+                                            <li className="chip"><label key={tag.id} htmlFor={`tag-${tag.id}`} className="tag-label">
                                                 <input
                                                     type="checkbox"
                                                     id={`tag-${tag.id}`}
@@ -109,7 +125,7 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                                                         setSelectedTags(updated);
                                                     }}
                                                 />
-                                                <span className="tag-chip">{tag.name}</span>
+                                                <span>{tag.name}</span>
                                             </label></li>
                                         );
                                     })}
@@ -118,13 +134,13 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                         ) : (
                             <>
                                 {photo.tags.sort((a, b) => a.name < b.name ? 1 : -1).map(tag => (
-                                    <li key={tag.id} className="tag-chip static">{tag.name}</li>
+                                    <li key={tag.id} className="chip">{tag.name}</li>
                                 ))}
                             </>
                         )
                     }
                     <li className="edit">
-                        <button onClick={() => {
+                        <button className="chip" onClick={() => {
 
                             if (!editingTags) {
                                 const sorted = [...tags].sort((a, b) => {
@@ -148,17 +164,17 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
 
                             setEditingTags(prev => !prev);
                         }}>
-                            {editingTags ? "save" : (photo.tags.length === 0 ? "add" : "edit")}
+                            {editingTags ? "save" : (photo.tags.length === 0 ? "Add" : "Edit")}
                         </button>
                     </li>
                 </ul>
+                {/* <span className="subtitle">People:</span> */}
                 <ul className="Persons">
-                    <span className="subtitle">People:</span>
                     {addingPerson ? (
                         <form onSubmit={savePersonChanges}>
                             <fieldset className="persons">
                                 {persons.filter(p => selectedPersons.has(p.id)).map(person => (
-                                    <li className="person" key={person.id}>
+                                    <li className="chip" key={person.id}>
                                         <label>
                                             <input
                                                 type="checkbox"
@@ -179,10 +195,16 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                             </fieldset>
 
                             <li>
-                                <input
+                                <input className="chip" ref={nameRef}
                                     type="text"
                                     value={newPersonName}
                                     onChange={e => setNewPersonName(e.target.value)}
+                                    onFocus={_ => {
+                                        setInputFocused(true);
+                                        nameRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+                                    }}
+                                    onBlur={() => setInputFocused(false)}
+                                    placeholder="Add new person"
                                     list="person-options"
                                 />
                             </li>
@@ -194,10 +216,10 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                             </datalist>
 
                             <li className="NewPerson">
-                                <button type="submit">Save</button>
+                                <button className="chip" type="submit">Save</button>
                             </li>
                             <li className="NewPerson">
-                                <button type="button" onClick={() => {
+                                <button className="chip" type="button" onClick={() => {
                                     setAddingPerson(false)
                                     setSelectedPersons(new Set(photo.persons.map(p => p.id)))
                                 }
@@ -208,18 +230,18 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                         </form>
                     ) : (
                         photo.persons.map(person => (
-                            <li key={person.id}>{person.name}</li>
+                            <li className="chip" key={person.id}>{person.name}</li>
                         ))
                     )}
 
                     {!addingPerson && (
                         <li className="NewPerson">
-                            <button onClick={() => setAddingPerson(true)}>Edit</button>
+                            <button className="chip" onClick={() => setAddingPerson(true)}>Edit</button>
                         </li>
                     )}
                 </ul>
                 <div className="ReportPhoto">
-                    <button className="report-button"
+                    <button className="red report-button"
                         onClick={() => {
                             const response = confirm("Are you sure you want to report this image?")
                             if (response) {
@@ -230,7 +252,6 @@ export function PhotoViewer({ photo, tags, persons, refreshPersons, onClose, upd
                         }}
                     >Report image</button>
                 </div>
-                <button className="CloseViewer" onClick={onClose}>x</button>
             </div>
         </div >
     )

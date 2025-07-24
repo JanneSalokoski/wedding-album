@@ -16,46 +16,6 @@
     }
 }
 
-.CandidatePhotos {
-    display: grid;
-    gap: var(--gap);
-    padding: var(--gap);
-
-    list-style-type: none;
-
-    grid-template-columns: repeat(3, auto);
-}
-
-.CandidatePhoto {
-    padding: var(--gap);
-
-
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap);
-
-    justify-content: center;
-    align-items: center;
-
-    button {
-        background-color: firebrick;
-        color: white;
-
-        padding: var(--gap);
-
-        border: none;
-        border-radius: 4px;
-    }
-
-    img.preview {
-        width: 10rem;
-        height: 10rem;
-    }
-
-    ul.file-info {
-        list-style-type: none;
-    }
-}
 
 .form-field {
     display: flex;
@@ -68,82 +28,18 @@
     font-size: 0.9rem;
 }
 
-.form-field input[type="file"] {
-    padding: var(--gap);
-    background-color: navy;
-    color: white;
-
-    border: none;
-    border-radius: 4px;
-
-    cursor: pointer;
-
-    font-size: 0.9rem;
-}
-
-.form-field input[type="file"]::file-selector-button {
-    background: none;
-    border: none;
-    padding: 0;
-    font: inherit;
-    color: inherit;
-}
-
 .App {
     display: grid;
     grid-template-rows: 1fr;
     height: 100vh;
     overflow: hidden;
     position: relative;
+
+    background-color: var(--color-bg);
 }
 
 .PhotoFeedWrapper {
     position: relative;
     height: 100vh;
     overflow-y: auto;
-}
-
-.OpenUploadForm {
-    position: absolute;
-    bottom: calc(var(--gap) * 2);
-    right: calc(var(--gap) * 2);
-    z-index: 10;
-
-    padding: var(--gap);
-    background: navy;
-    color: white;
-    font-size: 0.9rem;
-
-    border: none;
-    border-radius: 4px;
-
-    cursor: pointer;
-}
-
-.UploadFormOverlay {
-    position: absolute;
-    inset: 0;
-
-    background: rgba(0, 0, 0, 0.8);
-
-    z-index: 20;
-
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap);
-
-    justify-content: center;
-    align-items: center;
-
-    padding: var(--gap);
-
-    button.close-form {
-        background-color: firebrick;
-        color: white;
-
-        padding: var(--gap);
-
-        border: none;
-        border-radius: 4px;
-    }
 }
