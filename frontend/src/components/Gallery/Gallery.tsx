@@ -1,23 +1,53 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { createContext, useContext, useEffect, useState, type FormEvent } from "react";
 import "./Gallery.css";
 
 import { GoEye, GoHeart, GoSearch, GoSortAsc, GoSortDesc } from "react-icons/go";
 import type { IconType } from "react-icons";
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from "@headlessui/react";
 import { TfiLayoutAccordionMerged, TfiLayoutGrid2, TfiLayoutGrid3, TfiLayoutGrid4 } from "react-icons/tfi";
+import type { Photo } from "components/PhotoFeed";
+import { getPhotos } from "@api";
 
-function Photo() {
+import { CachedPhoto } from "@components";
+
+interface PhotoCardProps {
+    photo: Photo;
+}
+
+function PhotoCard({ photo }: PhotoCardProps) {
+    const { updatePhoto } = useGalleryUpdater();
+
+    const handleLike = async () => {
+        console.log("like");
+        updatePhoto(photo);
+    }
+
     return (
-        <li className="photo">
+        <li className="photo-card">
+            <CachedPhoto photoId={photo.id} src={photo.url} />
+            <div className="photo-actions">
+                <div className="photo-action like" onClick={handleLike}>
+                    <GoHeart /><span>{photo.likes}</span>
+                </div>
+                <div className="photo-action view" onClick={handleLike}>
+                    <GoEye /><span>{photo.views}</span>
+                </div>
+            </div>
         </li>
     )
 }
 
-function PhotoGrid() {
+interface PhotoGridProps {
+    photos: Map<number, Photo>;
+}
+
+function PhotoGrid({ photos }: PhotoGridProps) {
     return (
         <ol className="photogrid">
             {
-                [...Array(100).keys()].map(i => <Photo key={i} />)
+                [...photos.values()].map(photo => (
+                    <PhotoCard key={photo.id} photo={photo} />
+                ))
             }
         </ol>
     )
@@ -171,15 +201,59 @@ function Settings() {
     )
 }
 
+interface GalleryUpdatedContextInterface {
+    updatePhoto: (photo: Photo) => void;
+    deletePhoto: (id: number) => void;
+};
+
+const GalleryUpdateContext = createContext<GalleryUpdatedContextInterface | null>(null);
+
+export const useGalleryUpdater = () => {
+    const ctx = useContext(GalleryUpdateContext);
+
+    if (!ctx) {
+        throw new Error("useGalleryUpdater must be used within GalleryUpdateProvider");
+    }
+
+    return ctx;
+}
+
 export function Gallery() {
+    const [photos, setPhotos] = useState<Map<number, Photo>>(new Map());
+
+    useEffect(() => {
+        async function loadPhotos() {
+            const res = await getPhotos();
+            console.log(res);
+            setPhotos(new Map(res.map(img => [img.id, img])));
+        }
+
+        loadPhotos();
+    }, []);
+
+    function updatePhoto(photo: Photo) {
+        setPhotos(prev => new Map(prev).set(photo.id, photo));
+    }
+
+    function deletePhoto(id: number) {
+        setPhotos(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(id);
+            return newMap;
+        });
+    };
+
+
     return (
-        <div className="gallery">
-            <div className="settings-bar">
-                <Settings />
+        <GalleryUpdateContext.Provider value={{ updatePhoto, deletePhoto }}>
+            <div className="gallery">
+                <div className="settings-bar">
+                    <Settings />
+                </div>
+                <div className="main-content">
+                    <PhotoGrid photos={photos} />
+                </div>
             </div>
-            <div className="main-content">
-                <PhotoGrid />
-            </div>
-        </div>
+        </GalleryUpdateContext.Provider >
     )
 }

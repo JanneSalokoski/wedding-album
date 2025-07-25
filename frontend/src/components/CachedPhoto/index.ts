@@ -1,2 +1,1 @@
-export { Gallery } from "./Gallery";
 export { CachedPhoto } from "./CachedPhoto";

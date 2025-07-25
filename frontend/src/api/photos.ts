@@ -17,6 +17,16 @@ export async function getPhotos(): Promise<Photo[]> {
     return [];
 }
 
+export async function refreshPhotoUrl(photo_id: number): Promise<Photo> {
+    const res = await fetch(`api/photos/${photo_id}/url`);
+
+    if (!res.ok) {
+        console.error("Failed to get photo:", res.statusText);
+    }
+
+    return res.json();
+}
+
 export async function flagPhoto(photo_id: number) {
     try {
         const res = await fetch(`/api/photos/${photo_id}/flag`, {
