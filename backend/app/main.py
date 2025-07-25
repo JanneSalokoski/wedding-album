@@ -87,6 +87,17 @@ def list_photos(
     return photos
 
 
+@app.get("/photos/{photo_id}", response_model=PublicPhoto)
+def get_photo(photo_id: int, session: Session = Depends(get_session)):
+    photo = session.get(DBPhoto, photo_id)
+
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    photo.url = generate_presigned_view_url(photo.key)
+    return photo
+
+
 @app.post("/photos/{photo_id}/tags/{tag_id}", response_model=PublicPhoto)
 def add_tag_to_photo(
     photo_id: int, tag_id: int, session: Session = Depends(get_session)
