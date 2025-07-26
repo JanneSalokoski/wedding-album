@@ -135,7 +135,7 @@ def list_photos(
 
     now = datetime.utcnow()
     for photo in photos:
-        if photo.url_expires_at >= now + timedelta(minutes=5):
+        if photo.url_expires_at <= (now + timedelta(minutes=5)):
             photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
             photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
             photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
@@ -154,13 +154,8 @@ def get_photo(photo_id: int, session: Session = Depends(get_session)):
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
 
-    print("Getting photo!")
-
     now = datetime.utcnow()
-    if photo.url_expires_at >= now + timedelta(minutes=5):
-        print("\n\n\n")
-        print("Expired")
-        print("\n\n\n")
+    if photo.url_expires_at <= (now + timedelta(minutes=5)):
         photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
         photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
         photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
