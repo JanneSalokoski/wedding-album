@@ -1,89 +1,68 @@
-.CandidatePhotos {
-    display: grid;
-    gap: var(--gap-s);
-    row-gap: var(--gap);
-    padding: var(--gap);
-
-    list-style-type: none;
-
-    grid-template-columns: repeat(3, 1fr);
-}
-
-.CandidatePhoto {
-    display: flex;
-    flex-direction: column;
-
-    gap: var(--gap-s);
-
-
-    img.preview {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        aspect-ratio: 1 / 1;
-
-        border-radius: 4px;
-    }
-
-    ul.file-info {
-        list-style-type: none;
-
-        font-size: 0.7rem;
-        text-align: center;
-    }
-}
-
 .UploadForm {
     display: flex;
     flex-direction: column;
+
+    align-items: center;
     gap: var(--gap);
 
-    justify-content: center;
+    padding: var(--gap);
+
+    width: 100%;
+
+    height: calc(var(--vh) * 100);
+    overflow-y: auto;
+}
+
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--gap-s);
+
+}
+
+.preview-item {
+    display: flex;
+    flex-direction: column;
+
     align-items: center;
+    gap: var(--gap);
 
-    padding: var(--gap);
-
-    background-color: var(--color-black-2);
-
-    min-width: 80dvw;
-    min-height: 60dvh;
-
-    overflow-y: scroll;
+    position: relative;
 }
 
-.OpenUploadForm {
-    position: absolute;
-    bottom: calc(var(--gap) * 2);
-    right: calc(var(--gap) * 2);
-    z-index: 10;
+.preview-item img {
+    width: 100%;
 
-    padding: var(--gap);
-    background: navy;
-    color: white;
-    font-size: 0.9rem;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
 
-    border: none;
     border-radius: 4px;
-
-    cursor: pointer;
 }
 
-.UploadFormOverlay {
-    position: absolute;
-    inset: 0;
+.preview-item span {
+    font-size: 0.8rem;
+}
 
-    background: rgba(0, 0, 0, 0.8);
-
-    z-index: 20;
-
+.info {
     display: flex;
     flex-direction: column;
     gap: var(--gap);
+}
 
-    justify-content: center;
+span.icon-text {
+    display: flex;
     align-items: center;
+    justify-content: center;
+    gap: var(--gap-xs);
+}
 
-    padding: var(--gap);
+button.remove-button {
+    position: absolute;
+
+    top: var(--gap-xs);
+    right: var(--gap-xs);
+
+    opacity: 0.6;
 }
 
 .buttons {
@@ -91,26 +70,28 @@
     gap: var(--gap-s);
 }
 
-.UploadForm input[type="file"] {
-    background: none;
-    border: none;
+.messages {
+    display: flex;
+    flex-direction: column;
+
+    gap: var(--gap-xs);
+
+    align-items: center;
+    justify-content: center;
 }
 
-input[type="file"]::file-selector-button,
-input[type="file"]::-webkit-file-upload-button {
+.error {
+    display: grid;
+    grid-template-columns: 1fr auto;
 
-    box-sizing: border-box;
-
-    border: none;
-    border-radius: 4px;
-
-    padding: var(--gap-s) var(--gap) var(--gap-s) var(--gap);
-
-    background-color: var(--color-blue-3);
-    color: var(--color-white-3);
-
-    font-family: inherit;
+    font-family: monospace;
     font-size: 0.8rem;
 
-    transition: 100ms;
+    width: 100%;
+
+    padding: var(--gap);
+    border-radius: 4px;
+
+    background-color: var(--color-darkred-0);
+    color: var(--color-lightred-4);
 }

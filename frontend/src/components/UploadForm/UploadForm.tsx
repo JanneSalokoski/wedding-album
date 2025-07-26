@@ -1,193 +1,296 @@
-import { useEffect, useState } from "react";
-
-import { formatFileSize } from "../../utils/formatFileSize";
+import { useState } from "react";
 
 import "./UploadForm.css";
+import { GoTrash, GoUpload, GoUnverified, GoVerified, GoImage, GoCircleSlash, GoX } from "react-icons/go";
+import { Link, useNavigate } from "react-router-dom";
 
-interface UploadFormProps {
-    onSuccess?: () => void
-    onCancel: () => void
+interface ImagePreview {
+    file: File;
+    object_url?: string;
+    resized?: Blob;
+    thumb?: Blob;
+    valid: boolean;
 }
 
-export function UploadForm({ onSuccess, onCancel }: UploadFormProps) {
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-    type UploadStatus =
-        | { type: "pending" }
-        | { type: "uploading" }
-        | { type: "uploaded"; key: string }
-        | { type: "error"; message: string }
+type ImageStatus =
+    | "pending"
+    | "processing"
+    | "thumbnail"
+    | "uploading"
+    | "finished"
+    | "error";
 
-    const [files, setFiles] = useState<File[]>([]);
-    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-    const [statusMessages, setStatusMessages] = useState<UploadStatus[]>([]);
-    const [globalStatus, setGlobalStatus] = useState<"idle" | "uploading" | "done">("idle");
+interface Props {
+    maxFileSizeMB?: number;
+    maxWidth?: number;
+    maxHeight?: number;
+}
 
-    useEffect(() => {
-        if (!files) {
-            setPreviewUrls([]);
-            return;
-        }
+export function UploadForm({
+    maxFileSizeMB = 10,
+    maxWidth = 2000,
+    maxHeight = 2000,
+}: Props) {
+    const [images, setImages] = useState<ImagePreview[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [imageStatuses, setImageStatuses] = useState<Map<string, ImageStatus>>(
+        new Map()
+    );
+    const [uploaded, setUploaded] = useState<boolean>(false);
 
-        const statuses = files.map(file => {
-            if (file.size > MAX_FILE_SIZE) {
-                return { type: "error", message: "File too large" } as UploadStatus;
-            }
-            return { type: "pending" } as UploadStatus;
+    const navigate = useNavigate();
+
+    async function setImageStatus(name: string, status: ImageStatus) {
+        setImageStatuses((prev) => {
+            const m = new Map(prev);
+            m.set(name, status);
+            return m;
         });
-        setStatusMessages(statuses);
+    }
 
-        const urls = Array.from(files).map(file => URL.createObjectURL(file));
-        setPreviewUrls(urls);
+    async function resizeImage(
+        file: File,
+        maxW: number,
+        maxH: number
+    ): Promise<Blob> {
+        const img = document.createElement("img");
+        const url = URL.createObjectURL(file);
+        await new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.src = url;
+        });
+        URL.revokeObjectURL(url);
 
-        return () => {
-            urls.forEach(url => URL.revokeObjectURL(url));
-        }
-    }, [files]);
+        let { width, height } = img;
+        const scale = Math.min(maxW / width, maxH / height, 1);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
 
-    useEffect(() => {
-        if (globalStatus === "done") {
-            const timeout = setTimeout(() => {
-                setFiles([]);
-                setPreviewUrls([]);
-                setStatusMessages([]);
-                setGlobalStatus("idle");
-            }, 3000);
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, width, height);
 
-            return () => clearTimeout(timeout);
-        }
-    }, [globalStatus]);
-
-    async function setStatus(idx: number, status: UploadStatus) {
-        setStatusMessages(prev =>
-            prev.map((s, i) => (i === idx) ? status : s)
+        return new Promise((resolve) =>
+            canvas.toBlob((blob) => resolve(blob!), "image/webp", 0.9)
         );
     }
 
-
-    function handleUploads(event: React.FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-
-        setGlobalStatus("uploading");
-
-        const uploadableIndexes = statusMessages
-            .map((status, idx) => status.type !== "error" ? idx : null)
-            .filter((i): i is number => i !== null);
-
-        if (uploadableIndexes.length === 0) {
-            setGlobalStatus("done");
+    async function handleFiles(files: FileList | null) {
+        if (!files) {
             return;
         }
 
-        uploadableIndexes.forEach(idx => {
-            handleUpload(files[idx], idx);
-        });
+        const selected = Array.from(files);
+
+        for (const file of selected) {
+            let valid = true;
+
+            if (!file.type.startsWith("image/")) {
+                valid = false;
+                setError(`${file.name} is not an image`);
+            }
+            else if (file.size > maxFileSizeMB * 1024 * 1024) {
+                valid = false;
+                setError(`${file.name} is too large`);
+            }
+
+            const status = valid ? "pending" : "error"
+            setImageStatus(file.name, status as ImageStatus);
+
+            setImages(prev => [...prev, { file, valid }]);
+
+            if (valid) {
+                processImage(file);
+            }
+        }
     }
 
-    async function handleUpload(file: File, idx: number) {
-        setStatus(idx, { type: "uploading" });
-        const formData = new FormData();
-        formData.append("file", file);
+    function removeImage(name: string) {
+        setImages((prev) => prev.filter((img) => img.file.name !== name));
+        setImageStatuses((prev) => {
+            const m = new Map(prev);
+            m.delete(name);
+            return m;
+        })
+    }
+
+    async function processImage(file: File) {
+        try {
+            await setImageStatus(file.name, "processing");
+
+            const thumb = await resizeImage(file, 1000, 1000);
+            const object_url = URL.createObjectURL(thumb);
+
+            setImages(prev =>
+                prev.map(img =>
+                    img.file.name === file.name ? { ...img, thumb, object_url } : img
+                )
+            );
+
+            await setImageStatus(file.name, "thumbnail");
+
+            const resized = await resizeImage(file, maxWidth, maxHeight);
+
+            setImages(prev =>
+                prev.map(img =>
+                    img.file.name === file.name ? { ...img, resized } : img
+                )
+            );
+
+            await setImageStatus(file.name, "pending");
+        } catch (err) {
+            setError(`Failed to process ${file.name}`)
+            setImageStatus(file.name, "error");
+        }
+    }
+
+    async function uploadImages() {
+        const ready = images.filter(
+            (img) => img.valid && img.resized && img.thumb
+        );
+
+        const tasks = ready.map(async (img) => {
+            const { file, resized, thumb } = img;
+            setImageStatus(file.name, "uploading");
+
+            const formData = new FormData();
+            formData.append("original", file);
+            formData.append(
+                "resized",
+                resized!,
+                file.name.replace(/\.\w+$/, ".webp")
+            );
+            formData.append(
+                "thumb",
+                thumb!,
+                "thumb-" + file.name.replace(/\.\w+$/, ".webp")
+            );
+
+            const res = await fetch("/api/photos", { method: "POST", body: formData });
+            if (!res.ok) {
+                setImageStatus(file.name, "error");
+            } else {
+                setImageStatus(file.name, "finished");
+            }
+        });
+
+        await Promise.all(tasks);
+
+        setUploaded(true);
+        window.setTimeout(() => {
+            setImages([]);
+            setImageStatuses(new Map());
+            navigate("/");
+        }, 10 * 1000)
+    }
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
 
         try {
-            const res = await fetch("/api/upload-file", {
-                method: "POST",
-                body: formData,
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                setStatus(idx, { type: "uploaded", key: data.key });
-            } else {
-                setStatus(idx, { type: "error", message: "Upload failed" });
-            }
+            await uploadImages();
         } catch (err) {
-            setStatus(idx, { type: "error", message: "Network error" });
+            console.error(err);
+            setError("Upload failed.");
+        } finally {
+            setLoading(false);
         }
-
-        setStatusMessages((prev) => {
-            const next = [...prev];
-            next[idx] = next[idx]; // ensure reactivity
-
-            const doneCount = next.filter(
-                (s) => s?.type === "uploaded" || s?.type === "error"
-            ).length;
-
-            if (doneCount === files.length) {
-                setGlobalStatus("done");
-                onSuccess?.();
-            }
-
-            return next;
-        });
-    }
-
-    function removeFile(index: number) {
-        setFiles(prev => prev.filter((_, i) => i !== index));
-    }
-
-    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-        const selectedFiles = Array.from(e.target.files ?? []);
-        setFiles(selectedFiles);
     }
 
     return (
-        <form className="UploadForm" onSubmit={handleUploads}>
-            <h2>Upload Photos</h2>
-            <label className="form-field" htmlFor="file">
-                <span className="form-label">Select photos to upload:</span>
-                <input type="file"
-                    className="blue"
-                    accept="image/*"
-                    multiple={true}
-                    onChange={handleFileChange}
-                />
-            </label>
+        <form className="UploadForm" onSubmit={handleSubmit}>
 
-            <ol className="CandidatePhotos">
-                {Array.from(files ?? []).map((file, idx) => (
-                    <li key={file.name} className="CandidatePhoto">
-                        <img className="preview" src={previewUrls[idx]} alt={file.name} />
-                        <ul className="file-info">
-                            {/* <li className="filename">Filename: {file.name}</li> */}
-                            <li className="filesize">Size: {formatFileSize(file.size)}</li>
-                            <li className="status">
-                                {
-                                    (() => {
-                                        const status = statusMessages[idx];
-
-                                        if (!status) {
-                                            return "";
-                                        }
-
-                                        switch (status.type) {
-                                            case "pending": return "";
-                                            case "uploading": return "...";
-                                            case "uploaded": return `Uploaded!`;
-                                            case "error": return `Error: ${status.message}`;
-                                        }
-                                    })()
-                                }
-                            </li>
-                        </ul>
-                        <button type="button" className="red" onClick={() => removeFile(idx)}>Remove</button>
-                    </li>
-                ))}
-            </ol>
-
-            <div className="buttons">
-                <button className="blue" type="submit" disabled={!files || files.length === 0 || globalStatus !== "idle"}>Upload</button>
-                <button className="red" onClick={onCancel}>Cancel</button>
+            <div>
+                <h2>Upload images</h2>
+                <p>
+                    Here you can upload images to the album. Remember that anyone can see and download the images you submit, so be careful with what you select!
+                </p>
             </div>
 
-            {globalStatus === "done" && (
-                <div className="global-status success">All files uploaded</div>
+            {error && (
+                <div className="error">
+                    <span>Error: {error}</span>
+                    <button
+                        className="close-button"
+                        onClick={() => setError("")}
+                    >
+                        <GoX />
+                    </button>
+                </div>
             )}
-            {globalStatus === "uploading" && (
-                <div className="global-status">Uploading...</div>
-            )}
-        </form>
-    )
-}
 
+            <div className="preview-grid">
+                {images.map((img) => {
+                    const status = imageStatuses.get(img.file.name);
+                    const invalid = !img.valid || status === "error";
+
+                    return (
+                        <div
+                            key={img.file.name}
+                            className={`preview-item ${invalid ? "invalid" : ""}`}
+                        >
+                            <button
+                                type="button"
+                                className="remove-button"
+                                onClick={() => removeImage(img.file.name)}
+                            >
+                                <GoTrash />
+                            </button>
+
+                            {img.object_url && img.valid ? (
+                                <img src={img.object_url} alt={img.file.name} />
+                            ) : (
+                                <div className="placeholder" />
+                            )}
+
+                            <div className="info">
+                                <span className="name">{img.file.name}</span>
+                                <span className="status">{imageStatuses.get(img.file.name)}</span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="messages">
+                {uploaded && (
+                    <>
+                        <p>
+                            Upload finished. Returning you back to gallery...
+                        </p>
+                        <p>
+                            <Link to="/">Take me there now.</Link>
+                        </p>
+                    </>
+                )}
+            </div>
+
+            <div className="buttons">
+                <label htmlFor="file-upload" className="upload-button">
+                    <span className="icon-text"><span><GoImage /></span><span>Select images</span></span>
+                </label>
+                <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    style={{ opacity: 0, position: "absolute", pointerEvents: "none" }}
+                    onChange={(e) => handleFiles(e.target.files)}
+                />
+                <button type="submit" disabled={loading || images.length === 0}>
+                    {loading ? "Uploading..." : (<span className="icon-text"><span><GoUpload /></span><span>Upload</span></span>)}
+                </button>
+                <Link className="cancel-button button red" to="/">
+                    <span className="icon-text"><span><GoCircleSlash /></span><span>Cancel</span></span>
+                </Link>
+            </div>
+        </form>
+    );
+}
 

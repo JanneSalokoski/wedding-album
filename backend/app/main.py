@@ -7,6 +7,7 @@ from app.r2_utils import (
 )
 from uuid import uuid4
 from sqlmodel import SQLModel, Session, select
+from sqlalchemy import or_
 from app.database import engine, get_session
 from app.models import (
     DBPhoto,
@@ -18,6 +19,8 @@ from app.models import (
     PublicPerson,
     CreatePerson,
 )
+
+from datetime import datetime, timedelta
 
 from enum import Enum
 
@@ -54,6 +57,56 @@ async def upload_file(
     return {"id": photo.id, "key": photo.key}
 
 
+@app.post("/photos")
+async def upload_photo(
+    original: UploadFile = File(...),
+    resized: UploadFile = File(...),
+    thumb: UploadFile = File(...),
+    session: Session = Depends(get_session),
+):
+    key = f"{uuid4()}-{original.filename}"
+
+    original_contents = await original.read()
+    resized_contents = await resized.read()
+    thumb_contents = await thumb.read()
+
+    s3_client.put_object(
+        Bucket=R2_BUCKET,
+        Key=f"orig/{key}",
+        Body=original_contents,
+        ContentType=original.content_type,
+    )
+
+    s3_client.put_object(
+        Bucket=R2_BUCKET,
+        Key=f"resized/{key}",
+        Body=resized_contents,
+        ContentType=resized.content_type,
+    )
+
+    s3_client.put_object(
+        Bucket=R2_BUCKET,
+        Key=f"thumb/{key}",
+        Body=thumb_contents,
+        ContentType=thumb.content_type,
+    )
+
+    photo = DBPhoto(
+        key=key,
+        content_type=resized.content_type,
+        original_url=generate_presigned_view_url(f"orig/{key}"),
+        resized_url=generate_presigned_view_url(f"resized/{key}"),
+        thumb_url=generate_presigned_view_url(f"thumb/{key}"),
+        url_expires_at=datetime.utcnow() + timedelta(seconds=60 * 60),
+    )
+
+    session.add(photo)
+    session.commit()
+    session.refresh(photo)
+
+    return {"id": photo.id, "key": photo.key}
+
+
 class SortOption(str, Enum):
     newest = "newest"
     oldest = "oldest"
@@ -66,9 +119,24 @@ def list_photos(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     sort: SortOption = Query(SortOption.newest),
+    search_query: str | None = Query(None, min_length=1),
     session: Session = Depends(get_session),
 ):
     query = select(DBPhoto).where(DBPhoto.flagged == False)
+
+    if search_query:
+        like_pattern = f"%{search_query}%"
+        query = (
+            query.join(DBPhoto.tags, isouter=True)
+            .join(DBPhoto.persons, isouter=True)
+            .where(
+                or_(
+                    DBTag.name.ilike(like_pattern),
+                    DBPerson.name.ilike(like_pattern),
+                )
+            )
+            .distinct()
+        )
 
     if sort == SortOption.newest:
         query = query.order_by(DBPhoto.uploaded_at.desc())
@@ -81,10 +149,38 @@ def list_photos(
 
     photos = session.exec(query.offset(offset).limit(limit)).all()
 
+    now = datetime.utcnow()
     for photo in photos:
-        photo.url = generate_presigned_view_url(photo.key)
+        if photo.url_expires_at <= (now + timedelta(minutes=5)):
+            photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
+            photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
+            photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
+            photo.url_expires_at = now + timedelta(hours=24)
+            session.add(photo)
+            session.commit()
+            session.refresh(photo)
 
     return photos
+
+
+@app.get("/photos/{photo_id}", response_model=PublicPhoto)
+def get_photo(photo_id: int, session: Session = Depends(get_session)):
+    photo = session.get(DBPhoto, photo_id)
+
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    now = datetime.utcnow()
+    if photo.url_expires_at <= (now + timedelta(minutes=5)):
+        photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
+        photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
+        photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
+        photo.url_expires_at = now + timedelta(hours=24)
+        session.add(photo)
+        session.commit()
+        session.refresh(photo)
+
+    return photo
 
 
 @app.post("/photos/{photo_id}/tags/{tag_id}", response_model=PublicPhoto)
@@ -102,8 +198,6 @@ def add_tag_to_photo(
         session.add(photo)
         session.commit()
         session.refresh(photo)
-
-    photo.url = generate_presigned_view_url(photo.key)
 
     return photo
 
@@ -123,8 +217,6 @@ def set_tags(
     session.commit()
     session.refresh(photo)
 
-    photo.url = generate_presigned_view_url(photo.key)
-
     return photo
 
 
@@ -142,8 +234,6 @@ def set_persons(
     session.add(photo)
     session.commit()
     session.refresh(photo)
-
-    photo.url = generate_presigned_view_url(photo.key)
 
     return photo
 
@@ -163,8 +253,6 @@ def add_person_to_photo(
         session.add(photo)
         session.commit()
         session.refresh(photo)
-
-    photo.url = generate_presigned_view_url(photo.key)
 
     return photo
 
@@ -198,8 +286,6 @@ def view_photo(photo_id: int, session: Session = Depends(get_session)):
     session.commit()
     session.refresh(photo)
 
-    photo.url = generate_presigned_view_url(photo.key)
-
     return photo
 
 
@@ -214,8 +300,6 @@ def like_photo(photo_id: int, session: Session = Depends(get_session)):
     session.add(photo)
     session.commit()
     session.refresh(photo)
-
-    photo.url = generate_presigned_view_url(photo.key)
 
     return photo
 

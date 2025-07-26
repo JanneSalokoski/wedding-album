@@ -1,23 +1,23 @@
-import type { Photo } from "../components/PhotoFeed";
-import type { Person } from "../types";
+import type { Photo, Person } from "@types";
 
-export async function getPersons(callback: (res: Person[]) => void) {
+export async function getPersons(): Promise<Person[]> {
     try {
         const res = await fetch(`/api/persons`);
 
         if (!res.ok) {
             console.error("Failed to fetch persons:", res.statusText);
+            return [];
         }
 
-        const tags = await res.json();
-        callback(tags);
+        return res.json();
 
     } catch (error) {
         console.error("Network error while fetching persons:", error);
+        return [];
     }
 }
 
-export async function addPerson(photoId: number, personId: number, callback: (res: Photo) => void) {
+export async function addPerson(photoId: number, personId: number): Promise<Photo | null> {
     try {
         const res = await fetch(`/api/photos/${photoId}/persons/${personId}`, {
             method: "POST"
@@ -25,13 +25,14 @@ export async function addPerson(photoId: number, personId: number, callback: (re
 
         if (!res.ok) {
             console.error("Failed to add person:", res.statusText);
+            return null;
         }
 
-        const photo = await res.json();
-        callback(photo);
+        return res.json();
 
     } catch (error) {
         console.error("Network error while adding person:", error)
+        return null;
     }
 
 }

@@ -1,6 +1,6 @@
-import type { Photo } from "../components/PhotoFeed";
+import type { Photo } from "@types";
 
-export async function sendLike(photoId: number, callback: (res: Photo) => void) {
+export async function sendLike(photoId: number): Promise<Photo | null> {
     try {
         const res = await fetch(`/api/likes/${photoId}`, {
             method: "POST",
@@ -8,12 +8,13 @@ export async function sendLike(photoId: number, callback: (res: Photo) => void) 
 
         if (!res.ok) {
             console.error("Failed to like photo:", res.statusText);
+            return null;
         }
 
-        const photo = await res.json();
-        callback(photo);
+        return res.json();
 
     } catch (error) {
         console.error("Network error while liking photo:", error);
+        return null;
     }
 }
