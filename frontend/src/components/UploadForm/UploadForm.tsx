@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import "./UploadForm.css";
-import { GoTrash, GoUpload, GoUnverified, GoVerified, GoImage, GoCircleSlash } from "react-icons/go";
+import { GoTrash, GoUpload, GoUnverified, GoVerified, GoImage, GoCircleSlash, GoX } from "react-icons/go";
 import { Link, useNavigate } from "react-router-dom";
 
 interface ImagePreview {
@@ -205,10 +205,25 @@ export function UploadForm({
 
     return (
         <form className="UploadForm" onSubmit={handleSubmit}>
-            {error && <div className="error">{error}</div>}
 
             <div>
+                <h2>Upload images</h2>
+                <p>
+                    Here you can upload images to the album. Remember that anyone can see and download the images you submit, so be careful with what you select!
+                </p>
             </div>
+
+            {error && (
+                <div className="error">
+                    <span>Error: {error}</span>
+                    <button
+                        className="close-button"
+                        onClick={() => setError("")}
+                    >
+                        <GoX />
+                    </button>
+                </div>
+            )}
 
             <div className="preview-grid">
                 {images.map((img) => {

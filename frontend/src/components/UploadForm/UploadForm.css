@@ -79,3 +79,19 @@ button.remove-button {
     align-items: center;
     justify-content: center;
 }
+
+.error {
+    display: grid;
+    grid-template-columns: 1fr auto;
+
+    font-family: monospace;
+    font-size: 0.8rem;
+
+    width: 100%;
+
+    padding: var(--gap);
+    border-radius: 4px;
+
+    background-color: var(--color-darkred-0);
+    color: var(--color-lightred-4);
+}
