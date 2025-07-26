@@ -1,4 +1,4 @@
-import type { Photo } from "../components/PhotoFeed";
+import type { Photo } from "@types";
 
 export async function getPhotos(): Promise<Photo[]> {
     try {
@@ -15,6 +15,22 @@ export async function getPhotos(): Promise<Photo[]> {
     }
 
     return [];
+}
+
+export async function getPhoto(photoId: number): Promise<Photo | null> {
+    try {
+        const res = await fetch(`/api/photos/${photoId}`);
+
+        if (!res.ok) {
+            console.error("Failed to fetch photo:", res.statusText);
+            return null;
+        }
+
+        return res.json();
+    } catch (err) {
+        console.error("Network error while fetching photo:", err);
+        return null;
+    }
 }
 
 export async function refreshPhotoUrl(photo_id: number): Promise<Photo> {
