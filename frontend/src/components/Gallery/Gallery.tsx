@@ -6,7 +6,7 @@ import type { IconType } from "react-icons";
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from "@headlessui/react";
 import { TfiLayoutAccordionMerged, TfiLayoutGrid2, TfiLayoutGrid3, TfiLayoutGrid4 } from "react-icons/tfi";
 import type { Photo } from "@types";
-import { getPhotos, sendLike } from "@api";
+import { getPersons, getPhotos, getTags, sendLike } from "@api";
 
 import { CachedPhoto } from "@components";
 import { useNavigate } from "react-router-dom";
@@ -124,6 +124,8 @@ interface SearchBarProps {
 
 function SearchBar({ options, onOpen, onClose }: SearchBarProps) {
     const [open, setOpen] = useState<boolean>(false);
+    const { setSearchQuery } = useGallery();
+    const [localValue, setLocalValue] = useState("");
 
     useEffect(() => {
         if (open) {
@@ -135,15 +137,15 @@ function SearchBar({ options, onOpen, onClose }: SearchBarProps) {
 
     function handleSubmit(e: FormEvent) {
         e.preventDefault();
-
-        console.log("Searching");
-
+        setSearchQuery(localValue.trim());
         setOpen(false);
     }
 
     return open ? (
-        <form className="searchbar" onSubmit={handleSubmit} onBlur={() => setOpen(false)}>
+        <form className="searchbar" onSubmit={handleSubmit}>
             <input type="search" name="search"
+                value={localValue}
+                onChange={e => setLocalValue(e.target.value)}
                 autoFocus={true}
                 autoComplete="on"
                 list="search-suggestions"
@@ -192,13 +194,31 @@ function Settings() {
     const { sortOption, setSortOption, scaleOption, setScaleOption } = useGallery();
     // const [scaleOption, setScaleOption] = useState<ScaleOption>(scaleOptions[2]);
 
+    const [options, setOptions] = useState<string[]>([]);
+
+    async function loadOptions() {
+        const tags = await getTags();
+        const persons = await getPersons();
+
+        if (!tags || !persons) {
+            return;
+        }
+
+        const newOptions = [...tags.map(t => t.name), ...persons.map(p => p.name)];
+        setOptions(newOptions);
+    }
+
+    useEffect(() => {
+        loadOptions();
+    }, []);
+
     return (
         <ul className={`settings ${searchOpen ? "search-open" : ""}`}>
             <li className="setting-block search">
                 <SearchBar
                     onOpen={() => setSearchOpen(true)}
                     onClose={() => setSearchOpen(false)}
-                    options={["Janne", "Roosa", "Dali"]}
+                    options={options}
                 />
             </li>
             {
@@ -273,6 +293,8 @@ interface GalleryContextValue {
     setSortOption: (opt: SortOption) => void;
     scaleOption: ScaleOption;
     setScaleOption: (opt: ScaleOption) => void;
+    searchQuery: string;
+    setSearchQuery: (q: string) => void;
 };
 
 const GalleryContext = createContext<GalleryContextValue | null>(null);
@@ -299,6 +321,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     const defaultScale = scaleOptions[2];
     const [scaleOption, setScaleOption] = useState<ScaleOption>(defaultScale);
 
+    const [searchQuery, setSearchQuery] = useState<string>("");
+
     const limit = 20;
 
     async function loadMorePhotos() {
@@ -309,8 +333,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
         setLoading(true);
 
         try {
-            const res = await getPhotos(offset, limit, sortOption.id);
-            console.log(res);
+            const res = await getPhotos(offset, limit, sortOption.id, searchQuery);
             if (res.length === 0) {
                 setHasMore(false);
             } else {
@@ -339,7 +362,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
         setOffset(0);
         setHasMore(true);
         // loadMorePhotos();
-    }, [sortOption]);
+    }, [sortOption, searchQuery]);
 
     function updatePhoto(photo: Photo) {
         setPhotos((prev) => new Map(prev).set(photo.id, photo));
@@ -354,7 +377,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto, loadMorePhotos, sortOption, setSortOption, scaleOption, setScaleOption }}>
+        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto, loadMorePhotos, sortOption, setSortOption, scaleOption, setScaleOption, searchQuery, setSearchQuery }}>
             {children}
         </GalleryContext.Provider>
     );

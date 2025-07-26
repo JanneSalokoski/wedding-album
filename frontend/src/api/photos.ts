@@ -1,8 +1,19 @@
 import type { Photo } from "@types";
 
-export async function getPhotos(offset = 0, limit = 20, sort = "newest"): Promise<Photo[]> {
+export async function getPhotos(offset = 0, limit = 20, sort = "newest", search: string | null = null): Promise<Photo[]> {
     try {
-        const res = await fetch(`/api/photos?offset=${offset}&limit=${limit}&sort=${sort}`);
+        const params = new URLSearchParams({
+            offset: offset.toString(),
+            limit: limit.toString(),
+            sort,
+        });
+
+        if (search && search.trim() !== "") {
+            params.append("search_query", search.trim());
+        }
+
+        const res = await fetch(`/api/photos?${params.toString()}`);
+
 
         if (!res.ok) {
             console.error("Failed to fetch photos:", res.statusText);

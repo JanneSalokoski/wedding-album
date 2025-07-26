@@ -7,6 +7,7 @@ from app.r2_utils import (
 )
 from uuid import uuid4
 from sqlmodel import SQLModel, Session, select
+from sqlalchemy import or_
 from app.database import engine, get_session
 from app.models import (
     DBPhoto,
@@ -118,9 +119,24 @@ def list_photos(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     sort: SortOption = Query(SortOption.newest),
+    search_query: str | None = Query(None, min_length=1),
     session: Session = Depends(get_session),
 ):
     query = select(DBPhoto).where(DBPhoto.flagged == False)
+
+    if search_query:
+        like_pattern = f"%{search_query}%"
+        query = (
+            query.join(DBPhoto.tags, isouter=True)
+            .join(DBPhoto.persons, isouter=True)
+            .where(
+                or_(
+                    DBTag.name.ilike(like_pattern),
+                    DBPerson.name.ilike(like_pattern),
+                )
+            )
+            .distinct()
+        )
 
     if sort == SortOption.newest:
         query = query.order_by(DBPhoto.uploaded_at.desc())
