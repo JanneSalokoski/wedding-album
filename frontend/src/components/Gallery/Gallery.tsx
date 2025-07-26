@@ -181,15 +181,15 @@ interface SortOption {
 }
 
 const sortOptions = [
-    { id: 'desc', label: 'Newest first', icon: GoSortDesc },
-    { id: 'asc', label: 'Oldest first', icon: GoSortAsc },
+    { id: 'newest', label: 'Newest first', icon: GoSortDesc },
+    { id: 'oldest', label: 'Oldest first', icon: GoSortAsc },
     { id: 'liked', label: 'Most liked', icon: GoHeart },
-    { id: 'views', label: 'Most viewed', icon: GoEye },
+    { id: 'viewed', label: 'Most viewed', icon: GoEye },
 ];
 
 function Settings() {
     const [searchOpen, setSearchOpen] = useState<boolean>(false);
-    const [sortOption, setSortOption] = useState<SortOption>(sortOptions[0]);
+    const { sortOption, setSortOption } = useGallery();
     const [scaleOption, setScaleOption] = useState<ScaleOption>(scaleOptions[2]);
 
     return (
@@ -269,6 +269,8 @@ interface GalleryContextValue {
     updatePhoto: (photo: Photo) => void;
     deletePhoto: (id: number) => void;
     loadMorePhotos: () => void;
+    sortOption: SortOption;
+    setSortOption: (opt: SortOption) => void;
 };
 
 const GalleryContext = createContext<GalleryContextValue | null>(null);
@@ -289,6 +291,9 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     const [hasMore, setHasMore] = useState<boolean>(true);
     const [loading, setLoading] = useState<boolean>(false);
 
+    const defaultSort = sortOptions[0];
+    const [sortOption, setSortOption] = useState<SortOption>(defaultSort);
+
     const limit = 20;
 
     async function loadMorePhotos() {
@@ -299,7 +304,8 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
         setLoading(true);
 
         try {
-            const res = await getPhotos(offset, limit);
+            const res = await getPhotos(offset, limit, sortOption.id);
+            console.log(res);
             if (res.length === 0) {
                 setHasMore(false);
             } else {
@@ -323,6 +329,13 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
         loadMorePhotos();
     }, [])
 
+    useEffect(() => {
+        setPhotos(new Map());
+        setOffset(0);
+        setHasMore(true);
+        // loadMorePhotos();
+    }, [sortOption]);
+
     function updatePhoto(photo: Photo) {
         setPhotos((prev) => new Map(prev).set(photo.id, photo));
     }
@@ -336,7 +349,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto, loadMorePhotos }}>
+        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto, loadMorePhotos, sortOption, setSortOption }}>
             {children}
         </GalleryContext.Provider>
     );

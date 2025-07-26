@@ -1,8 +1,8 @@
 import type { Photo } from "@types";
 
-export async function getPhotos(offset = 0, limit = 20): Promise<Photo[]> {
+export async function getPhotos(offset = 0, limit = 20, sort = "newest"): Promise<Photo[]> {
     try {
-        const res = await fetch(`/api/photos?offset=${offset}&limit=${limit}`);
+        const res = await fetch(`/api/photos?offset=${offset}&limit=${limit}&sort=${sort}`);
 
         if (!res.ok) {
             console.error("Failed to fetch photos:", res.statusText);
