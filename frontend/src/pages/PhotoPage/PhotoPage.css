@@ -97,3 +97,31 @@ span.icon-text span {
 .field-label {
     font-size: 0.8rem;
 }
+
+fieldset,
+fieldset:active {
+    border: none;
+    outline: none;
+}
+
+.chip input[type="checkbox"] {
+    display: none;
+}
+
+.persons .chip {
+    background-color: var(--color-orange-2);
+
+    &:has(input[type="checkbox"]) {
+        cursor: pointer;
+    }
+
+    &:has(input[type="checkbox"]:not(:checked)) {
+        background-color: var(--color-black-5);
+        color: var(--color-white-5);
+    }
+
+    &:has(input[type="checkbox"]:checked) {
+        background-color: var(--color-orange-2);
+    }
+
+}
