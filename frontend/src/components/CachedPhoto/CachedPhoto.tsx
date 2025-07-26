@@ -1,7 +1,7 @@
 import type { ReactNode, CSSProperties } from "react";
 import { useState, useRef, useEffect } from "react";
 
-import { refreshPhotoUrl } from "@api";
+import { getPhoto } from "@api";
 
 interface Props {
     photoId: number;
@@ -86,8 +86,13 @@ export const CachedPhoto: React.FC<Props> = ({
             }
 
             try {
-                const res = await refreshPhotoUrl(photoId);
-                setUrl(res.url);
+                const res = await getPhoto(photoId);
+                console.log(res);
+                if (!res) {
+                    return;
+                }
+
+                setUrl(res.resized_url);
                 setRetryCount(retryCount + 1);
             } catch (err) {
                 console.error("Failed to refetch image URL:", err);

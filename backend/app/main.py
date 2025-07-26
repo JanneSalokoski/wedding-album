@@ -134,18 +134,15 @@ def list_photos(
     photos = session.exec(query.offset(offset).limit(limit)).all()
 
     now = datetime.utcnow()
-    updated = False
     for photo in photos:
-        if photo.url_expires_at <= now + timedelta(minutes=5):
+        if photo.url_expires_at >= now + timedelta(minutes=5):
             photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
             photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
             photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
             photo.url_expires_at = now + timedelta(hours=24)
             session.add(photo)
-            updated = True
-
-    if updated:
-        session.commit()
+            session.commit()
+            session.refresh(photo)
 
     return photos
 
@@ -157,14 +154,20 @@ def get_photo(photo_id: int, session: Session = Depends(get_session)):
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
 
+    print("Getting photo!")
+
     now = datetime.utcnow()
-    if photo.url_expires_at <= now + timedelta(minutes=5):
+    if photo.url_expires_at >= now + timedelta(minutes=5):
+        print("\n\n\n")
+        print("Expired")
+        print("\n\n\n")
         photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
         photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
         photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
         photo.url_expires_at = now + timedelta(hours=24)
         session.add(photo)
         session.commit()
+        session.refresh(photo)
 
     return photo
 
