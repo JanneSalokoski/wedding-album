@@ -1,1 +1,1 @@
-export { Gallery } from "./Gallery";
+export { Gallery, GalleryProvider, useGallery } from "./Gallery";

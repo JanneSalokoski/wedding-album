@@ -2,9 +2,11 @@ import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import { GalleryProvider } from "@components";
+
 import './index.css';
 
-import { HomePage, UploadPage, NotFoundPage } from "@pages";
+import { HomePage, UploadPage, PhotoPage, NotFoundPage } from "@pages";
 
 function App() {
     useEffect(() => {
@@ -21,13 +23,16 @@ function App() {
     });
 
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/upload" element={<UploadPage />} />
-                <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-        </BrowserRouter>
+        <GalleryProvider>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/upload" element={<UploadPage />} />
+                    <Route path="/photos/:photoId" element={<PhotoPage />} />
+                    <Route path="*" element={<NotFoundPage />} />
+                </Routes>
+            </BrowserRouter>
+        </GalleryProvider>
     )
 }
 

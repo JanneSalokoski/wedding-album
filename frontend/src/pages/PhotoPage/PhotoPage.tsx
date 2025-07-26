@@ -1,0 +1,228 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom"
+
+import type { Photo, Person, Tag } from "@types";
+
+import { addPerson, createPerson, getPersons, getPhoto, setPersons as setPhotoPersons } from "@api";
+
+import { CachedPhoto, useGallery } from "@components";
+import { GoCalendar, GoEye, GoHeart } from "react-icons/go";
+
+
+import "./PhotoPage.css";
+
+export function PhotoPage() {
+    const { photoId } = useParams<{ photoId: string }>();
+    const { photos, updatePhoto, deletePhoto } = useGallery();
+    const cached = photos.get(Number(photoId));
+
+    const [photo, setPhoto] = useState<Photo | undefined>(cached);
+
+
+    useEffect(() => {
+        if (!photo) {
+            getPhoto(Number(photoId)).then((fresh) => {
+                if (fresh) {
+                    setPhoto(fresh);
+                    updatePhoto(fresh);
+                }
+            });
+        }
+    }, [photoId]);
+
+    const [persons, setPersons] = useState<Person[]>([]);
+    const [editingPersons, setEditingPersons] = useState<boolean>(false);
+    const [editingTags, setEditingTags] = useState<boolean>(false);
+
+    const [selectedPersons, setSelectedPersons] = useState<Set<number>>(new Set());
+    const [newPersonName, setNewPersonName] = useState<string>("");
+
+    async function loadPersons() {
+        const persons = await getPersons();
+
+        if (!persons) {
+            return;
+        }
+
+        setPersons(persons);
+    }
+
+    useEffect(() => {
+        setSelectedPersons(new Set(photo?.persons.map(p => p.id)));
+    }, [photo])
+
+    useEffect(() => {
+        loadPersons();
+    }, [])
+
+    function togglePerson(id: number) {
+        setSelectedPersons(prev => {
+            const newSelected = new Set(prev);
+            if (newSelected.has(id)) {
+                newSelected.delete(id);
+                return newSelected;
+            }
+
+            newSelected.add(id);
+            return newSelected;
+        });
+    }
+
+    function addNewPerson() {
+        async function addNewPersonAsync() {
+            const person = await createPerson(newPersonName);
+            const newPhoto = await addPerson(photo?.id || 0, person.id);
+            if (newPhoto) {
+                updatePhoto(newPhoto);
+                setSelectedPersons((prev) => {
+                    const newSelected = new Set([...prev, ...newPhoto.persons.map(p => p.id)]);
+                    return newSelected;
+                });
+            }
+            await loadPersons();
+            setNewPersonName("");
+        }
+
+        addNewPersonAsync();
+    }
+
+    function setNewPersons() {
+        async function setNewPersonsAsync() {
+            const ids = [...selectedPersons];
+            const newPhoto = await setPhotoPersons(photo?.id ?? 0, ids);
+            if (newPhoto) {
+                updatePhoto(newPhoto);
+                setSelectedPersons((prev) => {
+                    const newSelected = new Set([...prev, ...newPhoto.persons.map(p => p.id)]);
+                    return newSelected;
+                });
+                setPhoto(newPhoto);
+            }
+            setEditingPersons(false);
+        }
+
+        setNewPersonsAsync();
+    }
+
+    if (!photo) return <div>Loading...</div>
+
+    if (!editingPersons && !editingTags) {
+        return (
+            <div className="PhotoPage page">
+                <div className="photo">
+                    <CachedPhoto photoId={photo.id} src={photo.resized_url} />
+                </div>
+                <div className="info">
+                    <p className="likes">
+                        <span className="icon-text"><span><GoHeart /></span><span>{photo.likes}</span></span>
+                    </p>
+                    <p className="views">
+                        <span className="icon-text"><span><GoEye /></span><span>{photo.views}</span></span>
+                    </p>
+                    <p className="spacer"></p>
+                    <p className="uploaded">
+                        <span className="icon-text">
+                            <span><GoCalendar /></span>
+                            <span>
+                                {
+                                    new Intl.DateTimeFormat(undefined, {
+                                        dateStyle: "short",
+                                        timeStyle: "short",
+                                    }).format(new Date(photo.uploaded_at))
+                                }
+                            </span>
+                        </span>
+                    </p>
+                </div>
+                <div className="people">
+                    <h3>People in this photo</h3>
+                    <ul className="chips persons">
+                        {
+                            photo.persons.length > 0 ?
+                                photo.persons.map(person => (
+                                    <li key={person.id} className="chip person">
+                                        {person.name}
+                                    </li>
+                                )) :
+                                <li className="empty">
+                                    Nobody tagged yet
+                                </li>
+                        }
+                    </ul>
+                    <button type="button"
+                        onClick={() => setEditingPersons(true)}
+                    >
+                        Tag people
+                    </button>
+                </div>
+                <div className="tags">
+                    <h3>Tags</h3>
+                </div>
+            </div >
+        )
+    }
+    else if (editingPersons) {
+        return (
+            <div className="EditPersons page">
+                <h3>Select people in the photo</h3>
+                <fieldset id="all-people">
+                    <ul className="chips persons">
+                        {
+                            persons.map(person => (
+                                <li key={person.id} className="chip person">
+                                    <label>
+                                        {person.name}
+                                        <input type="checkbox"
+                                            value={person.id}
+                                            checked={selectedPersons.has(person.id)}
+                                            onChange={_ => {
+                                                togglePerson(person.id);
+                                            }}
+                                        />
+                                    </label>
+
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </fieldset>
+                <div className="new-person">
+                    <label className="form-field">
+                        <span className="field-label">
+                            Add a new person:
+                        </span>
+                        <input type="text"
+                            value={newPersonName}
+                            onChange={(e) => setNewPersonName(e.target.value)}
+                            name="new-person-name"
+                            placeholder="Dali Koira"
+                        />
+                    </label>
+                </div>
+                <div className="buttons">
+                    {(newPersonName === "") ? (
+                        <button type="button"
+                            onClick={() => setNewPersons()}
+                        >
+                            Save
+                        </button>
+                    ) : (
+                        <button type="button"
+                            onClick={() => addNewPerson()}
+                        >
+                            Add person
+                        </button>
+                    )
+                    }
+                    <button type="button"
+                        className="cancel-button red"
+                        onClick={() => setEditingPersons(false)}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+}

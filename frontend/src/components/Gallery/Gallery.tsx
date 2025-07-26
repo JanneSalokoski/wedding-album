@@ -5,17 +5,20 @@ import { GoEye, GoHeart, GoSearch, GoSortAsc, GoSortDesc } from "react-icons/go"
 import type { IconType } from "react-icons";
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from "@headlessui/react";
 import { TfiLayoutAccordionMerged, TfiLayoutGrid2, TfiLayoutGrid3, TfiLayoutGrid4 } from "react-icons/tfi";
-import type { Photo } from "components/PhotoFeed";
+import type { Photo } from "@types";
 import { getPhotos } from "@api";
 
 import { CachedPhoto } from "@components";
+import { useNavigate } from "react-router-dom";
 
 interface PhotoCardProps {
     photo: Photo;
 }
 
 function PhotoCard({ photo }: PhotoCardProps) {
-    const { updatePhoto } = useGalleryUpdater();
+    const { updatePhoto } = useGallery();
+
+    const navigate = useNavigate();
 
     const handleLike = async () => {
         console.log("like");
@@ -23,7 +26,7 @@ function PhotoCard({ photo }: PhotoCardProps) {
     }
 
     return (
-        <li className="photo-card">
+        <li className="photo-card" onClick={() => navigate(`/photos/${photo.id}`)}>
             <CachedPhoto photoId={photo.id} src={photo.thumb_url} />
             <div className="photo-actions">
                 <div className="photo-action like" onClick={handleLike}>
@@ -201,15 +204,16 @@ function Settings() {
     )
 }
 
-interface GalleryUpdatedContextInterface {
+interface GalleryContextValue {
+    photos: Map<number, Photo>;
     updatePhoto: (photo: Photo) => void;
     deletePhoto: (id: number) => void;
 };
 
-const GalleryUpdateContext = createContext<GalleryUpdatedContextInterface | null>(null);
+const GalleryContext = createContext<GalleryContextValue | null>(null);
 
-export const useGalleryUpdater = () => {
-    const ctx = useContext(GalleryUpdateContext);
+export const useGallery = () => {
+    const ctx = useContext(GalleryContext);
 
     if (!ctx) {
         throw new Error("useGalleryUpdater must be used within GalleryUpdateProvider");
@@ -218,42 +222,48 @@ export const useGalleryUpdater = () => {
     return ctx;
 }
 
-export function Gallery() {
+export function GalleryProvider({ children }: { children: React.ReactNode }) {
     const [photos, setPhotos] = useState<Map<number, Photo>>(new Map());
 
     useEffect(() => {
         async function loadPhotos() {
             const res = await getPhotos();
-            console.log(res);
-            setPhotos(new Map(res.map(img => [img.id, img])));
+            setPhotos(new Map(res.map((img) => [img.id, img])));
         }
 
         loadPhotos();
-    }, []);
+    }, [])
 
     function updatePhoto(photo: Photo) {
-        setPhotos(prev => new Map(prev).set(photo.id, photo));
+        setPhotos((prev) => new Map(prev).set(photo.id, photo));
     }
 
     function deletePhoto(id: number) {
-        setPhotos(prev => {
+        setPhotos((prev) => {
             const newMap = new Map(prev);
             newMap.delete(id);
             return newMap;
         });
-    };
-
+    }
 
     return (
-        <GalleryUpdateContext.Provider value={{ updatePhoto, deletePhoto }}>
-            <div className="gallery">
-                <div className="settings-bar">
-                    <Settings />
-                </div>
-                <div className="main-content">
-                    <PhotoGrid photos={photos} />
-                </div>
-            </div>
-        </GalleryUpdateContext.Provider >
-    )
+        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto }}>
+            {children}
+        </GalleryContext.Provider>
+    );
 }
+
+export function Gallery() {
+    const { photos } = useGallery();
+    return (
+        <div className="gallery">
+            <div className="settings-bar">
+                <Settings />
+            </div>
+            <div className="main-content">
+                <PhotoGrid photos={photos} />
+            </div>
+        </div>
+    );
+}
+

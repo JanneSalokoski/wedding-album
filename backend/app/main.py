@@ -225,8 +225,6 @@ def set_persons(
     session.commit()
     session.refresh(photo)
 
-    photo.url = generate_presigned_view_url(photo.key)
-
     return photo
 
 
@@ -245,8 +243,6 @@ def add_person_to_photo(
         session.add(photo)
         session.commit()
         session.refresh(photo)
-
-    photo.url = generate_presigned_view_url(photo.key)
 
     return photo
 
