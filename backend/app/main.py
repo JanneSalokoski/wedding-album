@@ -19,6 +19,8 @@ from app.models import (
     CreatePerson,
 )
 
+from datetime import datetime, timedelta
+
 from enum import Enum
 
 app = FastAPI(root_path="/api")
@@ -54,6 +56,56 @@ async def upload_file(
     return {"id": photo.id, "key": photo.key}
 
 
+@app.post("/photos")
+async def upload_photo(
+    original: UploadFile = File(...),
+    resized: UploadFile = File(...),
+    thumb: UploadFile = File(...),
+    session: Session = Depends(get_session),
+):
+    key = f"{uuid4()}-{original.filename}"
+
+    original_contents = await original.read()
+    resized_contents = await resized.read()
+    thumb_contents = await thumb.read()
+
+    s3_client.put_object(
+        Bucket=R2_BUCKET,
+        Key=f"orig/{key}",
+        Body=original_contents,
+        ContentType=original.content_type,
+    )
+
+    s3_client.put_object(
+        Bucket=R2_BUCKET,
+        Key=f"resized/{key}",
+        Body=resized_contents,
+        ContentType=resized.content_type,
+    )
+
+    s3_client.put_object(
+        Bucket=R2_BUCKET,
+        Key=f"thumb/{key}",
+        Body=thumb_contents,
+        ContentType=thumb.content_type,
+    )
+
+    photo = DBPhoto(
+        key=key,
+        content_type=resized.content_type,
+        original_url=generate_presigned_view_url(f"orig/{key}"),
+        resized_url=generate_presigned_view_url(f"resized/{key}"),
+        thumb_url=generate_presigned_view_url(f"thumb/{key}"),
+        url_expires_at=datetime.utcnow() + timedelta(seconds=60 * 60),
+    )
+
+    session.add(photo)
+    session.commit()
+    session.refresh(photo)
+
+    return {"id": photo.id, "key": photo.key}
+
+
 class SortOption(str, Enum):
     newest = "newest"
     oldest = "oldest"
@@ -81,8 +133,19 @@ def list_photos(
 
     photos = session.exec(query.offset(offset).limit(limit)).all()
 
+    now = datetime.utcnow()
+    updated = False
     for photo in photos:
-        photo.url = generate_presigned_view_url(photo.key)
+        if photo.url_expires_at <= now + timedelta(minutes=5):
+            photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
+            photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
+            photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
+            photo.url_expires_at = now + timedelta(hours=24)
+            session.add(photo)
+            updated = True
+
+    if updated:
+        session.commit()
 
     return photos
 
@@ -94,7 +157,15 @@ def get_photo(photo_id: int, session: Session = Depends(get_session)):
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
 
-    photo.url = generate_presigned_view_url(photo.key)
+    now = datetime.utcnow()
+    if photo.url_expires_at <= now + timedelta(minutes=5):
+        photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
+        photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
+        photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
+        photo.url_expires_at = now + timedelta(hours=24)
+        session.add(photo)
+        session.commit()
+
     return photo
 
 

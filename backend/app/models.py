@@ -23,7 +23,13 @@ class BasePhoto(SQLModel):
 class DBPhoto(BasePhoto, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     key: str
-    url: str | None
+
+    original_url: str
+    resized_url: str
+    thumb_url: str
+
+    url_expires_at: datetime = Field(default_factory=datetime.utcnow)
+
     views: int = 0
     likes: int = 0
     flagged: bool = False
@@ -38,7 +44,9 @@ class DBPhoto(BasePhoto, table=True):
 
 class PublicPhoto(BasePhoto):
     id: int
-    url: str | None
+    original_url: str
+    resized_url: str
+    thumb_url: str
     tags: list["PublicTag"]
     persons: list["PublicPerson"]
 
