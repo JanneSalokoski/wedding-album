@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 
 import type { Photo, Person, Tag } from "@types";
 
-import { addPerson, createPerson, flagPhoto, getPersons, getPhoto, getTags, setPersons as setPhotoPersons, setTags as setPhotoTags } from "@api";
+import { addPerson, createPerson, flagPhoto, getPersons, getPhoto, getTags, sendLike, sendView, setPersons as setPhotoPersons, setTags as setPhotoTags } from "@api";
 
 import { CachedPhoto, useGallery } from "@components";
 import { GoCalendar, GoEye, GoHeart } from "react-icons/go";
@@ -70,6 +70,7 @@ export function PhotoPage() {
     useEffect(() => {
         loadPersons();
         loadTags();
+        handleView();
     }, [])
 
     function togglePerson(id: number) {
@@ -152,6 +153,27 @@ export function PhotoPage() {
         setNewTagsAsync();
     }
 
+
+    async function handleView() {
+        const newPhoto = await sendView(Number(photoId));
+        if (!newPhoto) {
+            return;
+        }
+
+        updatePhoto(newPhoto);
+        setPhoto(newPhoto);
+    }
+
+    async function handleLike() {
+        const newPhoto = await sendLike(photo?.id ?? 0);
+        if (!newPhoto) {
+            return;
+        }
+
+        updatePhoto(newPhoto);
+        setPhoto(newPhoto);
+    }
+
     if (!photo) return <div>Loading...</div>
 
     if (!editingPersons && !editingTags) {
@@ -160,7 +182,7 @@ export function PhotoPage() {
                 <div className="photo">
                     <CachedPhoto photoId={photo.id} src={photo.resized_url} />
                     <div className="info">
-                        <p className="likes">
+                        <p className="likes" onClick={() => handleLike()}>
                             <span className="icon-text"><span><GoHeart /></span><span>{photo.likes}</span></span>
                         </p>
                         <p className="views">
