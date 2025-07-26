@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 
 import type { Photo, Person, Tag } from "@types";
 
-import { addPerson, createPerson, getPersons, getPhoto, getTags, setPersons as setPhotoPersons, setTags as setPhotoTags } from "@api";
+import { addPerson, createPerson, flagPhoto, getPersons, getPhoto, getTags, setPersons as setPhotoPersons, setTags as setPhotoTags } from "@api";
 
 import { CachedPhoto, useGallery } from "@components";
 import { GoCalendar, GoEye, GoHeart } from "react-icons/go";
@@ -12,6 +12,8 @@ import { GoCalendar, GoEye, GoHeart } from "react-icons/go";
 import "./PhotoPage.css";
 
 export function PhotoPage() {
+    const navigate = useNavigate();
+
     const { photoId } = useParams<{ photoId: string }>();
     const { photos, updatePhoto, deletePhoto } = useGallery();
     const cached = photos.get(Number(photoId));
@@ -157,29 +159,29 @@ export function PhotoPage() {
             <div className="PhotoPage page">
                 <div className="photo">
                     <CachedPhoto photoId={photo.id} src={photo.resized_url} />
-                </div>
-                <div className="info">
-                    <p className="likes">
-                        <span className="icon-text"><span><GoHeart /></span><span>{photo.likes}</span></span>
-                    </p>
-                    <p className="views">
-                        <span className="icon-text"><span><GoEye /></span><span>{photo.views}</span></span>
-                    </p>
-                    <p className="spacer"></p>
-                    <p className="uploaded">
-                        <span className="icon-text">
-                            <span><GoCalendar /></span>
-                            <span>
-                                {
-                                    new Intl.DateTimeFormat(undefined, {
-                                        dateStyle: "short",
-                                        timeStyle: "short",
-                                    }).format(new Date(photo.uploaded_at))
-                                }
+                    <div className="info">
+                        <p className="likes">
+                            <span className="icon-text"><span><GoHeart /></span><span>{photo.likes}</span></span>
+                        </p>
+                        <p className="views">
+                            <span className="icon-text"><span><GoEye /></span><span>{photo.views}</span></span>
+                        </p>
+                        <p className="spacer"></p>
+                        <p className="uploaded">
+                            <span className="icon-text">
+                                <span><GoCalendar /></span>
+                                <span>
+                                    {
+                                        new Intl.DateTimeFormat(undefined, {
+                                            dateStyle: "short",
+                                            timeStyle: "short",
+                                        }).format(new Date(photo.uploaded_at))
+                                    }
+                                </span>
                             </span>
-                        </span>
-                    </p>
-                </div>
+                        </p>
+                    </div></div>
+
                 <div className="people">
                     <h3>People in this photo</h3>
                     <ul className="chips persons">
@@ -220,6 +222,24 @@ export function PhotoPage() {
                         onClick={() => setEditingTags(true)}
                     >
                         Edit tags
+                    </button>
+                </div>
+                <div className="report">
+                    <h3>
+                        Options
+                    </h3>
+                    <button className="report-button red"
+                        onClick={() => {
+                            const res = confirm("Are you sure you want to report this image? It will be removed from view of all users.")
+
+                            if (res) {
+                                deletePhoto(photo.id);
+                                flagPhoto(photo.id);
+                                navigate("/");
+                            }
+                        }}
+                    >
+                        Report image
                     </button>
                 </div>
             </div >
