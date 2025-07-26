@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type FormEvent } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type FormEvent } from "react";
 import "./Gallery.css";
 
 import { GoEye, GoHeart, GoHeartFill, GoSearch, GoSortAsc, GoSortDesc } from "react-icons/go";
@@ -82,14 +82,37 @@ interface PhotoGridProps {
 }
 
 function PhotoGrid({ photos }: PhotoGridProps) {
-    return (
-        <ol className="photogrid">
-            {
-                [...photos.values()].map(photo => (
-                    <PhotoCard key={photo.id} photo={photo} />
-                ))
+    const { loadMorePhotos } = useGallery();
+    const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+
+        if (!sentinel) {
+            return;
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                loadMorePhotos();
             }
-        </ol>
+        });
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [loadMorePhotos]);
+
+    return (
+        <>
+            <ol className="photogrid">
+                {
+                    [...photos.values()].map(photo => (
+                        <PhotoCard key={photo.id} photo={photo} />
+                    ))
+                }
+            </ol>
+            <div ref={sentinelRef} style={{ height: "1px" }} />
+        </>
     )
 }
 
@@ -245,6 +268,7 @@ interface GalleryContextValue {
     photos: Map<number, Photo>;
     updatePhoto: (photo: Photo) => void;
     deletePhoto: (id: number) => void;
+    loadMorePhotos: () => void;
 };
 
 const GalleryContext = createContext<GalleryContextValue | null>(null);
@@ -261,14 +285,42 @@ export const useGallery = () => {
 
 export function GalleryProvider({ children }: { children: React.ReactNode }) {
     const [photos, setPhotos] = useState<Map<number, Photo>>(new Map());
+    const [offset, setOffset] = useState<number>(0);
+    const [hasMore, setHasMore] = useState<boolean>(true);
+    const [loading, setLoading] = useState<boolean>(false);
 
-    useEffect(() => {
-        async function loadPhotos() {
-            const res = await getPhotos();
-            setPhotos(new Map(res.map((img) => [img.id, img])));
+    const limit = 20;
+
+    async function loadMorePhotos() {
+        if (loading || !hasMore) {
+            return;
         }
 
-        loadPhotos();
+        setLoading(true);
+
+        try {
+            const res = await getPhotos(offset, limit);
+            if (res.length === 0) {
+                setHasMore(false);
+            } else {
+                setPhotos((prev) => {
+                    const newMap = new Map(prev);
+                    for (const img of res) {
+                        newMap.set(img.id, img);
+                    }
+
+                    return newMap;
+                });
+
+            }
+            setOffset((prev) => prev + res.length);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        loadMorePhotos();
     }, [])
 
     function updatePhoto(photo: Photo) {
@@ -284,7 +336,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto }}>
+        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto, loadMorePhotos }}>
             {children}
         </GalleryContext.Provider>
     );
