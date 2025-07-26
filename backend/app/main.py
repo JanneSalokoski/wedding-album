@@ -185,8 +185,6 @@ def add_tag_to_photo(
         session.commit()
         session.refresh(photo)
 
-    photo.url = generate_presigned_view_url(photo.key)
-
     return photo
 
 
@@ -204,8 +202,6 @@ def set_tags(
     session.add(photo)
     session.commit()
     session.refresh(photo)
-
-    photo.url = generate_presigned_view_url(photo.key)
 
     return photo
 
@@ -276,8 +272,6 @@ def view_photo(photo_id: int, session: Session = Depends(get_session)):
     session.commit()
     session.refresh(photo)
 
-    photo.url = generate_presigned_view_url(photo.key)
-
     return photo
 
 
@@ -292,8 +286,6 @@ def like_photo(photo_id: int, session: Session = Depends(get_session)):
     session.add(photo)
     session.commit()
     session.refresh(photo)
-
-    photo.url = generate_presigned_view_url(photo.key)
 
     return photo
 

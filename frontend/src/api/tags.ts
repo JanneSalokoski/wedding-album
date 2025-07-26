@@ -1,18 +1,19 @@
-import type { Tag, Photo } from "../components/PhotoFeed";
+import type { Tag, Photo } from "@types";
 
-export async function getTags(callback: (res: Tag[]) => void) {
+export async function getTags(): Promise<Tag[] | null> {
     try {
         const res = await fetch(`/api/tags`);
 
         if (!res.ok) {
             console.error("Failed to fetch tags:", res.statusText);
+            return null;
         }
 
-        const tags = await res.json();
-        callback(tags);
+        return res.json();
 
     } catch (error) {
         console.error("Network error while fetching tags:", error);
+        return null;
     }
 }
 

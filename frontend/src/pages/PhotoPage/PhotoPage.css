@@ -58,7 +58,7 @@ span.icon-text span {
 }
 
 .people,
-.tags {
+.tags:not(.chips) {
     display: flex;
     flex-direction: column;
     gap: var(--gap);
@@ -80,7 +80,8 @@ span.icon-text span {
 }
 
 
-.EditPersons.page {
+.EditPersons.page,
+.EditTags.page {
     padding: var(--gap);
     gap: var(--gap-s);
 
@@ -122,6 +123,24 @@ fieldset:active {
 
     &:has(input[type="checkbox"]:checked) {
         background-color: var(--color-orange-2);
+    }
+
+}
+
+.tags .chip {
+    background-color: var(--color-pink-2);
+
+    &:has(input[type="checkbox"]) {
+        cursor: pointer;
+    }
+
+    &:has(input[type="checkbox"]:not(:checked)) {
+        background-color: var(--color-black-5);
+        color: var(--color-white-5);
+    }
+
+    &:has(input[type="checkbox"]:checked) {
+        background-color: var(--color-pink-2);
     }
 
 }

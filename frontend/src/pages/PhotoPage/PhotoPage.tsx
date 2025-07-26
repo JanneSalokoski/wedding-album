@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom"
 
 import type { Photo, Person, Tag } from "@types";
 
-import { addPerson, createPerson, getPersons, getPhoto, setPersons as setPhotoPersons } from "@api";
+import { addPerson, createPerson, getPersons, getPhoto, getTags, setPersons as setPhotoPersons, setTags as setPhotoTags } from "@api";
 
 import { CachedPhoto, useGallery } from "@components";
 import { GoCalendar, GoEye, GoHeart } from "react-icons/go";
@@ -32,7 +32,10 @@ export function PhotoPage() {
 
     const [persons, setPersons] = useState<Person[]>([]);
     const [editingPersons, setEditingPersons] = useState<boolean>(false);
+
+    const [tags, setTags] = useState<Tag[]>([]);
     const [editingTags, setEditingTags] = useState<boolean>(false);
+    const [selectedTags, setSelectedTags] = useState<Set<number>>(new Set());
 
     const [selectedPersons, setSelectedPersons] = useState<Set<number>>(new Set());
     const [newPersonName, setNewPersonName] = useState<string>("");
@@ -47,16 +50,41 @@ export function PhotoPage() {
         setPersons(persons);
     }
 
+    async function loadTags() {
+        const tags = await getTags();
+
+        if (!tags) {
+            return;
+        }
+
+        setTags(tags);
+    }
+
     useEffect(() => {
         setSelectedPersons(new Set(photo?.persons.map(p => p.id)));
+        setSelectedTags(new Set(photo?.tags.map(p => p.id)));
     }, [photo])
 
     useEffect(() => {
         loadPersons();
+        loadTags();
     }, [])
 
     function togglePerson(id: number) {
         setSelectedPersons(prev => {
+            const newSelected = new Set(prev);
+            if (newSelected.has(id)) {
+                newSelected.delete(id);
+                return newSelected;
+            }
+
+            newSelected.add(id);
+            return newSelected;
+        });
+    }
+
+    function toggleTag(id: number) {
+        setSelectedTags(prev => {
             const newSelected = new Set(prev);
             if (newSelected.has(id)) {
                 newSelected.delete(id);
@@ -102,6 +130,24 @@ export function PhotoPage() {
         }
 
         setNewPersonsAsync();
+    }
+
+    function setNewTags() {
+        async function setNewTagsAsync() {
+            const ids = [...selectedTags];
+            const newPhoto = await setPhotoTags(photo?.id ?? 0, ids);
+            if (newPhoto) {
+                updatePhoto(newPhoto);
+                setSelectedTags((prev) => {
+                    const newSelected = new Set([...prev, ...newPhoto.persons.map(p => p.id)]);
+                    return newSelected;
+                });
+                setPhoto(newPhoto);
+            }
+            setEditingTags(false);
+        }
+
+        setNewTagsAsync();
     }
 
     if (!photo) return <div>Loading...</div>
@@ -157,6 +203,24 @@ export function PhotoPage() {
                 </div>
                 <div className="tags">
                     <h3>Tags</h3>
+                    <ul className="chips tags">
+                        {
+                            photo.tags.length > 0 ?
+                                photo.tags.map(tag => (
+                                    <li key={tag.id} className="chip tag">
+                                        {tag.name}
+                                    </li>
+                                )) :
+                                <li className="empty">
+                                    No tags set yet
+                                </li>
+                        }
+                    </ul>
+                    <button type="button"
+                        onClick={() => setEditingTags(true)}
+                    >
+                        Edit tags
+                    </button>
                 </div>
             </div >
         )
@@ -217,6 +281,46 @@ export function PhotoPage() {
                     <button type="button"
                         className="cancel-button red"
                         onClick={() => setEditingPersons(false)}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        )
+    } else if (editingTags) {
+        return (
+            <div className="EditTags page">
+                <h3>Select tags for the photo</h3>
+                <fieldset id="all-tags">
+                    <ul className="chips tags">
+                        {
+                            tags.map(tag => (
+                                <li key={tag.id} className="chip tag">
+                                    <label>
+                                        {tag.name}
+                                        <input type="checkbox"
+                                            value={tag.id}
+                                            checked={selectedTags.has(tag.id)}
+                                            onChange={_ => {
+                                                toggleTag(tag.id);
+                                            }}
+                                        />
+                                    </label>
+
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </fieldset>
+                <div className="buttons">
+                    <button type="button"
+                        onClick={() => setNewTags()}
+                    >
+                        Save
+                    </button>
+                    <button type="button"
+                        className="cancel-button red"
+                        onClick={() => setEditingTags(false)}
                     >
                         Cancel
                     </button>
