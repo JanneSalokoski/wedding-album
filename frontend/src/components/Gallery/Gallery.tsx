@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type FormEvent } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type CSSProperties } from "react";
 import "./Gallery.css";
 
 import { GoEye, GoHeart, GoHeartFill, GoSearch, GoSortAsc, GoSortDesc } from "react-icons/go";
@@ -82,7 +82,7 @@ interface PhotoGridProps {
 }
 
 function PhotoGrid({ photos }: PhotoGridProps) {
-    const { loadMorePhotos } = useGallery();
+    const { loadMorePhotos, scaleOption } = useGallery();
     const sentinelRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -104,7 +104,7 @@ function PhotoGrid({ photos }: PhotoGridProps) {
 
     return (
         <>
-            <ol className="photogrid">
+            <ol className="photogrid" style={{ "--scale": scaleOption.id } as CSSProperties}>
                 {
                     [...photos.values()].map(photo => (
                         <PhotoCard key={photo.id} photo={photo} />
@@ -189,8 +189,8 @@ const sortOptions = [
 
 function Settings() {
     const [searchOpen, setSearchOpen] = useState<boolean>(false);
-    const { sortOption, setSortOption } = useGallery();
-    const [scaleOption, setScaleOption] = useState<ScaleOption>(scaleOptions[2]);
+    const { sortOption, setSortOption, scaleOption, setScaleOption } = useGallery();
+    // const [scaleOption, setScaleOption] = useState<ScaleOption>(scaleOptions[2]);
 
     return (
         <ul className={`settings ${searchOpen ? "search-open" : ""}`}>
@@ -271,6 +271,8 @@ interface GalleryContextValue {
     loadMorePhotos: () => void;
     sortOption: SortOption;
     setSortOption: (opt: SortOption) => void;
+    scaleOption: ScaleOption;
+    setScaleOption: (opt: ScaleOption) => void;
 };
 
 const GalleryContext = createContext<GalleryContextValue | null>(null);
@@ -293,6 +295,9 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
     const defaultSort = sortOptions[0];
     const [sortOption, setSortOption] = useState<SortOption>(defaultSort);
+
+    const defaultScale = scaleOptions[2];
+    const [scaleOption, setScaleOption] = useState<ScaleOption>(defaultScale);
 
     const limit = 20;
 
@@ -349,7 +354,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto, loadMorePhotos, sortOption, setSortOption }}>
+        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto, loadMorePhotos, sortOption, setSortOption, scaleOption, setScaleOption }}>
             {children}
         </GalleryContext.Provider>
     );
