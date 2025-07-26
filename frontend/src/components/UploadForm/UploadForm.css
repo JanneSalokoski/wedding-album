@@ -1,26 +1,81 @@
-.upload-form {
+.UploadForm {
     display: flex;
     flex-direction: column;
+
+    align-items: center;
     gap: var(--gap);
+
+    padding: var(--gap);
+
+    width: 100%;
+
+    height: calc(var(--vh) * 100);
+    overflow-y: auto;
 }
 
 .preview-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--gap-s);
+
 }
 
 .preview-item {
     display: flex;
     flex-direction: column;
+
     align-items: center;
+    gap: var(--gap);
+
+    position: relative;
 }
 
 .preview-item img {
-    max-width: 100%;
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+
     border-radius: 4px;
 }
 
 .preview-item span {
     font-size: 0.8rem;
+}
+
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+}
+
+span.icon-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-xs);
+}
+
+button.remove-button {
+    position: absolute;
+
+    top: var(--gap-xs);
+    right: var(--gap-xs);
+
+    opacity: 0.6;
+}
+
+.buttons {
+    display: flex;
+    gap: var(--gap-s);
+}
+
+.messages {
+    display: flex;
+    flex-direction: column;
+
+    gap: var(--gap-xs);
+
+    align-items: center;
+    justify-content: center;
 }

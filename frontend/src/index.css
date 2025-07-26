@@ -108,7 +108,8 @@ input,
 button,
 submit,
 textarea,
-select {
+select,
+.button {
     box-sizing: border-box;
 
     border: none;
@@ -147,7 +148,8 @@ textarea {
 }
 
 button.red,
-submit.red {
+submit.red,
+.button.red {
     background-color: var(--color-darkred-0);
     color: var(--color-lightred-5);
 
@@ -178,4 +180,9 @@ input.blue {
         background-color: var(--color-blue-0);
         color: var(--color-gray-5);
     }
+}
+
+.button {
+    text-decoration: none;
+    color: inherit;
 }
