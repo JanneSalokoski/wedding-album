@@ -6,7 +6,7 @@ import type { Photo, Person, Tag } from "@types";
 import { addPerson, createPerson, flagPhoto, getPersons, getPhoto, getTags, sendLike, sendView, setPersons as setPhotoPersons, setTags as setPhotoTags } from "@api";
 
 import { CachedPhoto, useGallery } from "@components";
-import { GoCalendar, GoEye, GoHeart } from "react-icons/go";
+import { GoCalendar, GoEye, GoHeart, GoHeartFill } from "react-icons/go";
 
 
 import "./PhotoPage.css";
@@ -19,6 +19,7 @@ export function PhotoPage() {
     const cached = photos.get(Number(photoId));
 
     const [photo, setPhoto] = useState<Photo | undefined>(cached);
+    const [showHeart, setShowHeart] = useState(false);
 
 
     useEffect(() => {
@@ -174,13 +175,30 @@ export function PhotoPage() {
         setPhoto(newPhoto);
     }
 
+    async function handleDoubleClick() {
+        setShowHeart(true);
+        setTimeout(() => setShowHeart(false), 800);
+        const newPhoto = await sendLike(Number(photoId));
+        if (!newPhoto) {
+            return;
+        }
+
+        updatePhoto(newPhoto);
+        setPhoto(newPhoto);
+    }
+
     if (!photo) return <div>Loading...</div>
 
     if (!editingPersons && !editingTags) {
         return (
             <div className="PhotoPage page">
-                <div className="photo">
+                <div className="photo" onDoubleClick={handleDoubleClick}>
                     <CachedPhoto photoId={photo.id} src={photo.resized_url} />
+                    {showHeart && (
+                        <div className="like-heart">
+                            <GoHeartFill />
+                        </div>
+                    )}
                     <div className="info">
                         <p className="likes" onClick={() => handleLike()}>
                             <span className="icon-text"><span><GoHeart /></span><span>{photo.likes}</span></span>

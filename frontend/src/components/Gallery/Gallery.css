@@ -213,7 +213,33 @@
     gap: var(--gap-xs);
 }
 
-svg {
-    width: 0.8rem;
-    height: 0.8rem;
+.like-heart {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    color: rgba(255, 0, 80, 0.85);
+    font-size: 4rem;
+    pointer-events: none;
+    animation: heart-pop 0.8s ease-out forwards;
+}
+
+@keyframes heart-pop {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.3);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
 }

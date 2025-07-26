@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useState, type FormEvent } from "react";
 import "./Gallery.css";
 
-import { GoEye, GoHeart, GoSearch, GoSortAsc, GoSortDesc } from "react-icons/go";
+import { GoEye, GoHeart, GoHeartFill, GoSearch, GoSortAsc, GoSortDesc } from "react-icons/go";
 import type { IconType } from "react-icons";
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from "@headlessui/react";
 import { TfiLayoutAccordionMerged, TfiLayoutGrid2, TfiLayoutGrid3, TfiLayoutGrid4 } from "react-icons/tfi";
 import type { Photo } from "@types";
-import { getPhotos } from "@api";
+import { getPhotos, sendLike } from "@api";
 
 import { CachedPhoto } from "@components";
 import { useNavigate } from "react-router-dom";
@@ -18,15 +18,46 @@ interface PhotoCardProps {
 function PhotoCard({ photo }: PhotoCardProps) {
     const { updatePhoto } = useGallery();
 
-    const navigate = useNavigate();
+    const [showHeart, setShowHeart] = useState<boolean>(false);
 
-    const handleLike = async () => {
-        console.log("like");
-        updatePhoto(photo);
+    const navigate = useNavigate();
+    let clickTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    function handleClick() {
+        if (clickTimeout) {
+            clearTimeout(clickTimeout);
+            clickTimeout = null;
+            handleDoubleClick();
+        } else {
+            clickTimeout = setTimeout(() => {
+                navigate(`/photos/${photo.id}`);
+                clickTimeout = null;
+            }, 250)
+        }
+    }
+
+    async function handleLike() {
+        const newPhoto = await sendLike(photo.id);
+        if (!newPhoto) {
+            return;
+        }
+
+        updatePhoto(newPhoto);
+    }
+
+    async function handleDoubleClick() {
+        setShowHeart(true);
+        setTimeout(() => setShowHeart(false), 800);
+        const newPhoto = await sendLike(photo.id);
+        if (!newPhoto) {
+            return;
+        }
+
+        updatePhoto(newPhoto);
     }
 
     return (
-        <li className="photo-card" onClick={() => navigate(`/photos/${photo.id}`)}>
+        <li className="photo-card" onClick={handleClick}>
             <CachedPhoto photoId={photo.id} src={photo.thumb_url} />
             <div className="photo-actions">
                 <div className="photo-action like" onClick={handleLike}>
@@ -36,6 +67,12 @@ function PhotoCard({ photo }: PhotoCardProps) {
                     <GoEye /><span>{photo.views}</span>
                 </div>
             </div>
+
+            {showHeart && (
+                <div className="like-heart">
+                    <GoHeartFill />
+                </div>
+            )}
         </li>
     )
 }
