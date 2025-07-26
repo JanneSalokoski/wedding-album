@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import './index.css';
 
-import { HomePage, NotFoundPage } from "@pages";
+import { HomePage, UploadPage, NotFoundPage } from "@pages";
 
 function App() {
     useEffect(() => {
@@ -24,6 +24,7 @@ function App() {
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/upload" element={<UploadPage />} />
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </BrowserRouter>

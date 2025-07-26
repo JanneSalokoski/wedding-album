@@ -24,7 +24,7 @@ function PhotoCard({ photo }: PhotoCardProps) {
 
     return (
         <li className="photo-card">
-            <CachedPhoto photoId={photo.id} src={photo.url} />
+            <CachedPhoto photoId={photo.id} src={photo.thumb_url} />
             <div className="photo-actions">
                 <div className="photo-action like" onClick={handleLike}>
                     <GoHeart /><span>{photo.likes}</span>
