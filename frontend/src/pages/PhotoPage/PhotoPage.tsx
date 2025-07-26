@@ -263,6 +263,7 @@ export function PhotoPage() {
                     >
                         Report image
                     </button>
+                    <a className="full-size-link" href={photo.original_url}>View full-sized image</a>
                 </div>
             </div >
         )
