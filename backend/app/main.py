@@ -114,6 +114,23 @@ class SortOption(str, Enum):
     viewed = "viewed"
 
 
+@app.get("/photos/refresh")
+def refresh_photos(session: Session = Depends(get_session)):
+    photos = session.exec(select(DBPhoto)).all()
+
+    now = datetime.utcnow()
+    for photo in photos:
+        photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
+        photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
+        photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
+        photo.url_expires_at = now + timedelta(hours=1)
+        session.add(photo)
+
+    session.commit()
+
+    return {"ok": True}
+
+
 @app.get("/photos", response_model=list[PublicPhoto])
 def list_photos(
     limit: int = Query(20, ge=1, le=100),
@@ -155,7 +172,7 @@ def list_photos(
             photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
             photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
             photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
-            photo.url_expires_at = now + timedelta(hours=24)
+            photo.url_expires_at = now + timedelta(hours=1)
             session.add(photo)
             session.commit()
             session.refresh(photo)
@@ -175,7 +192,7 @@ def get_photo(photo_id: int, session: Session = Depends(get_session)):
         photo.original_url = generate_presigned_view_url(f"orig/{photo.key}")
         photo.resized_url = generate_presigned_view_url(f"resized/{photo.key}")
         photo.thumb_url = generate_presigned_view_url(f"thumb/{photo.key}")
-        photo.url_expires_at = now + timedelta(hours=24)
+        photo.url_expires_at = now + timedelta(hours=1)
         session.add(photo)
         session.commit()
         session.refresh(photo)
