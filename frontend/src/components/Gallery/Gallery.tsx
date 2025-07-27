@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type FormEvent, type CSSProperties } from "react";
 import "./Gallery.css";
 
-import { GoEye, GoHeart, GoHeartFill, GoSearch, GoSortAsc, GoSortDesc } from "react-icons/go";
+import { GoEye, GoHeart, GoHeartFill, GoSearch, GoSortAsc, GoSortDesc, GoX } from "react-icons/go";
 import type { IconType } from "react-icons";
 import { Listbox, ListboxButton, ListboxOptions, ListboxOption } from "@headlessui/react";
 import { TfiLayoutAccordionMerged, TfiLayoutGrid2, TfiLayoutGrid3, TfiLayoutGrid4 } from "react-icons/tfi";
@@ -150,6 +150,15 @@ function SearchBar({ options, onOpen, onClose }: SearchBarProps) {
                 autoComplete="on"
                 list="search-suggestions"
             />
+            <button type="button"
+                onClick={() => {
+                    setLocalValue("");
+                    setSearchQuery("");
+                    setOpen(false);
+                }}
+            >
+                <GoX />
+            </button>
             <datalist id="search-suggestions">
                 {
                     options ? options.map(opt => <option value={opt} />) : <></>
@@ -158,7 +167,23 @@ function SearchBar({ options, onOpen, onClose }: SearchBarProps) {
             <button type="submit"><GoSearch /></button>
         </form>
     ) : (
-        <button onClick={() => setOpen(true)}><GoSearch /></button >
+        <>
+            <button onClick={() => setOpen(true)}><GoSearch /></button >
+            {
+                localValue.trim() !== "" && (
+                    <button type="button"
+                        onClick={() => {
+                            setLocalValue("");
+                            setSearchQuery("");
+                            setOpen(false);
+                        }}
+                    >
+                        <GoX />
+                    </button>
+
+                )
+            }
+        </>
     );
 }
 
