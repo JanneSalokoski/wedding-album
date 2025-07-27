@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import "./UploadForm.css";
-import { GoTrash, GoUpload, GoUnverified, GoVerified, GoImage, GoCircleSlash, GoX } from "react-icons/go";
+import { GoTrash, GoUpload, GoImage, GoCircleSlash, GoX } from "react-icons/go";
 import { Link, useNavigate } from "react-router-dom";
 
 interface ImagePreview {
