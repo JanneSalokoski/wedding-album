@@ -193,3 +193,16 @@ fieldset:active {
         transform: translate(-50%, -50%) scale(0.8);
     }
 }
+
+.close-button {
+    position: absolute;
+    top: var(--gap-l);
+    right: var(--gap-l);
+
+    width: 2rem;
+    height: 2rem;
+
+    padding: var(--gap-xs);
+
+    opacity: 0.7;
+}

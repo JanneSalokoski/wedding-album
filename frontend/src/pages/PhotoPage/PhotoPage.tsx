@@ -6,7 +6,7 @@ import type { Photo, Person, Tag } from "@types";
 import { addPerson, createPerson, flagPhoto, getPersons, getPhoto, getTags, sendLike, sendView, setPersons as setPhotoPersons, setTags as setPhotoTags } from "@api";
 
 import { CachedPhoto, useGallery } from "@components";
-import { GoCalendar, GoEye, GoHeart, GoHeartFill } from "react-icons/go";
+import { GoCalendar, GoEye, GoHeart, GoHeartFill, GoX } from "react-icons/go";
 
 
 import "./PhotoPage.css";
@@ -283,6 +283,11 @@ export function PhotoPage() {
                     </button>
                     <a className="full-size-link" href={photo.original_url}>View full-sized image</a>
                 </div>
+                <button className="close-button"
+                    onClick={() => navigate("/")}
+                >
+                    <GoX />
+                </button>
             </div >
         )
     }

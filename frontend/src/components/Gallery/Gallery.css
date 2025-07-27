@@ -124,9 +124,14 @@
     display: flex;
 }
 
+.setting-block.search {
+    display: flex;
+    gap: var(--gap-s);
+}
+
 .searchbar {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
 
     width: 100%;
 
