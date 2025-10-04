@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 type NavCtx = {
   order: number[];                 // array of photo IDs in current grid order
