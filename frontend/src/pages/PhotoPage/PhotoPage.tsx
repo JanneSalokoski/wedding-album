@@ -10,13 +10,18 @@ import { GoCalendar, GoEye, GoHeart, GoHeartFill, GoX } from "react-icons/go";
 
 
 import "./PhotoPage.css";
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
 export function PhotoPage() {
     const navigate = useNavigate();
 
     const { photoId } = useParams<{ photoId: string }>();
-    const { photos, updatePhoto, deletePhoto } = useGallery();
+    const { photos, updatePhoto, deletePhoto, index, current, setCurrent } = useGallery();
     const cached = photos.get(Number(photoId));
+
+    useEffect(() => {
+        setCurrent(Number(index?.findIndex(x => x == Number(photoId))));
+    }, [photoId]);
 
     const [photo, setPhoto] = useState<Photo | undefined>(cached);
     const [showHeart, setShowHeart] = useState(false);
@@ -221,6 +226,23 @@ export function PhotoPage() {
                             </span>
                         </p>
                     </div></div>
+
+                    <button className="arrow-next" onClick={() => {
+                        const next_pos = index && index.length > 0 ? ((current ?? 0) + 1) % index.length : 0;
+                        const next = index ? index[next_pos] : undefined;
+                        setPhoto(undefined);
+                        navigate(`/photos/${next}`);
+                    }}>
+                        <FaArrowRight />
+                    </button>
+                    <button className="arrow-prev" onClick={() => {
+                        const prev_pos = index && index.length > 0 ? ((current ?? 0) - 1 + index.length) % index.length : 0;
+                        const prev = index ? index[prev_pos] : undefined;
+                        setPhoto(undefined);
+                        navigate(`/photos/${prev}`);
+                    }}>
+                        <FaArrowLeft />
+                    </button>
 
                 <div className="people">
                     <h3>People in this photo</h3>

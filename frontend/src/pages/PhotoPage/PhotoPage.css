@@ -1,208 +1,246 @@
 .PhotoPage {
-    padding: var(--gap);
-    display: grid;
-    gap: var(--gap-l);
+  padding: var(--gap);
+  display: grid;
+  gap: var(--gap-l);
 
-    grid-template-rows: repeat(3, auto) 1fr;
+  grid-template-rows: repeat(3, auto) 1fr;
 
-    overflow-y: auto;
+  overflow-y: auto;
 }
 
 .PhotoPage .photo {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 
+  width: 100%;
+  border-radius: 4px;
+
+  .cached-image {
     width: 100%;
     border-radius: 4px;
-
-    .cached-image {
-        width: 100%;
-        border-radius: 4px;
-    }
+  }
 }
 
 .PhotoPage .info {
-    display: grid;
-    width: 100%;
-    grid-template-columns: repeat(2, auto) 1fr auto;
-    font-size: 0.8rem;
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, auto) 1fr auto;
+  font-size: 0.8rem;
 }
 
 span.icon-text,
 span.icon-text span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--gap-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-xs);
 }
 
 .chips {
-    list-style-type: none;
+  list-style-type: none;
 
-    display: flex;
-    flex-wrap: wrap;
+  display: flex;
+  flex-wrap: wrap;
 
-    align-items: center;
-    justify-content: center;
+  align-items: center;
+  justify-content: center;
 
-    gap: var(--gap-s);
+  gap: var(--gap-s);
 }
 
 .chip {
-    padding: var(--gap-s);
+  padding: var(--gap-s);
 
-    background-color: var(--color-black-3);
-    border-radius: 4px;
+  background-color: var(--color-black-3);
+  border-radius: 4px;
 
-    font-size: 0.8rem;
+  font-size: 0.8rem;
 }
 
 .people,
 .tags:not(.chips) {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
 
-    align-items: center;
-    justify-content: center;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty {
-    font-size: 0.8rem;
-    font-style: italic;
-    color: var(--color-blue-4);
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--color-blue-4);
 }
 
 .new-person {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap-s);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-s);
 }
 
 
 .EditPersons.page,
 .EditTags.page {
-    padding: var(--gap);
-    gap: var(--gap-s);
+  padding: var(--gap);
+  gap: var(--gap-s);
 
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 
-    align-items: center;
-    justify-content: start;
+  align-items: center;
+  justify-content: start;
 
 
-    overflow-y: auto;
+  overflow-y: auto;
 }
 
 .field-label {
-    font-size: 0.8rem;
+  font-size: 0.8rem;
 }
 
 fieldset,
 fieldset:active {
-    border: none;
-    outline: none;
+  border: none;
+  outline: none;
 }
 
 .chip input[type="checkbox"] {
-    display: none;
+  display: none;
 }
 
 .persons .chip {
+  background-color: var(--color-orange-2);
+
+  &:has(input[type="checkbox"]) {
+    cursor: pointer;
+  }
+
+  &:has(input[type="checkbox"]:not(:checked)) {
+    background-color: var(--color-black-5);
+    color: var(--color-white-5);
+  }
+
+  &:has(input[type="checkbox"]:checked) {
     background-color: var(--color-orange-2);
-
-    &:has(input[type="checkbox"]) {
-        cursor: pointer;
-    }
-
-    &:has(input[type="checkbox"]:not(:checked)) {
-        background-color: var(--color-black-5);
-        color: var(--color-white-5);
-    }
-
-    &:has(input[type="checkbox"]:checked) {
-        background-color: var(--color-orange-2);
-    }
+  }
 
 }
 
 .tags .chip {
+  background-color: var(--color-pink-2);
+
+  &:has(input[type="checkbox"]) {
+    cursor: pointer;
+  }
+
+  &:has(input[type="checkbox"]:not(:checked)) {
+    background-color: var(--color-black-5);
+    color: var(--color-white-5);
+  }
+
+  &:has(input[type="checkbox"]:checked) {
     background-color: var(--color-pink-2);
-
-    &:has(input[type="checkbox"]) {
-        cursor: pointer;
-    }
-
-    &:has(input[type="checkbox"]:not(:checked)) {
-        background-color: var(--color-black-5);
-        color: var(--color-white-5);
-    }
-
-    &:has(input[type="checkbox"]:checked) {
-        background-color: var(--color-pink-2);
-    }
+  }
 
 }
 
 .report {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
 
-    align-items: center;
-    justify-content: center;
+  align-items: center;
+  justify-content: center;
 }
 
 .full-size-link {
-    font-style: italic;
-    color: var(--color-blue-4);
-    font-size: 0.8rem;
+  font-style: italic;
+  color: var(--color-blue-4);
+  font-size: 0.8rem;
 }
 
 .like-heart {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.5);
-    color: rgba(255, 0, 80, 0.85);
-    font-size: 4rem;
-    pointer-events: none;
-    animation: heart-pop 0.8s ease-out forwards;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  color: rgba(255, 0, 80, 0.85);
+  font-size: 4rem;
+  pointer-events: none;
+  animation: heart-pop 0.8s ease-out forwards;
 }
 
 @keyframes heart-pop {
-    0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.3);
-    }
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
 
-    20% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.2);
-    }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
 
-    50% {
-        transform: translate(-50%, -50%) scale(1);
-    }
+  50% {
+    transform: translate(-50%, -50%) scale(1);
+  }
 
-    100% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.8);
-    }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
 }
 
 .close-button {
-    position: absolute;
-    top: var(--gap-l);
-    right: var(--gap-l);
+  position: absolute;
+  top: var(--gap-l);
+  right: var(--gap-l);
 
-    width: 2rem;
-    height: 2rem;
+  width: 2rem;
+  height: 2rem;
 
-    padding: var(--gap-xs);
+  padding: var(--gap-xs);
 
-    opacity: 0.7;
+  opacity: 0.7;
+}
+
+.arrow-next,
+.arrow-prev {
+  position: absolute;
+
+  top: 20vh;
+  height: 20vh;
+
+  background: none;
+}
+
+.arrow-next {
+  right: 0;
+
+  padding-left: 4rem;
+  padding-right: 2rem;
+
+  &:hover {
+    background: radial-gradient(circle at right center,
+        rgba(0, 0, 0, 0.5) 0%,
+        rgba(0, 0, 0, 0.3) 30%,
+        rgba(0, 0, 0, 0) 75%);
+  }
+
+}
+
+.arrow-prev {
+  left: 0;
+  padding-left: 2rem;
+  padding-right: 4rem;
+
+  &:hover {
+    background: radial-gradient(circle at left center,
+        rgba(0, 0, 0, 0.5) 0%,
+        rgba(0, 0, 0, 0.3) 30%,
+        rgba(0, 0, 0, 0) 75%);
+  }
 }

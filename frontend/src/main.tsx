@@ -7,6 +7,7 @@ import { GalleryProvider } from "@components";
 import './index.css';
 
 import { HomePage, UploadPage, PhotoPage, NotFoundPage } from "@pages";
+import { GalleryNavProvider } from './contexts/navContext';
 
 function App() {
     useEffect(() => {
@@ -23,6 +24,7 @@ function App() {
     });
 
     return (
+        <GalleryNavProvider>
         <GalleryProvider>
             <BrowserRouter>
                 <Routes>
@@ -33,6 +35,7 @@ function App() {
                 </Routes>
             </BrowserRouter>
         </GalleryProvider>
+    </GalleryNavProvider>
     )
 }
 

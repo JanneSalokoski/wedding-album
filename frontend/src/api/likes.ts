@@ -2,7 +2,7 @@ import type { Photo } from "@types";
 
 export async function sendLike(photoId: number): Promise<Photo | null> {
     try {
-        const res = await fetch(`/api/likes/${photoId}`, {
+        const res = await fetch(`/likes/${photoId}`, {
             method: "POST",
         });
 

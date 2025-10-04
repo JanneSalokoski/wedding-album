@@ -11,12 +11,15 @@ import { getPersons, getPhotos, getTags, sendLike } from "@api";
 import { CachedPhoto } from "@components";
 import { useNavigate } from "react-router-dom";
 
+import { useLocalStorage } from "react-use";
+
 interface PhotoCardProps {
     photo: Photo;
+    idx: number;
 }
 
-function PhotoCard({ photo }: PhotoCardProps) {
-    const { updatePhoto } = useGallery();
+function PhotoCard({ photo, idx }: PhotoCardProps) {
+    const { setCurrent, updatePhoto } = useGallery();
 
     const [showHeart, setShowHeart] = useState<boolean>(false);
 
@@ -30,6 +33,7 @@ function PhotoCard({ photo }: PhotoCardProps) {
             handleDoubleClick();
         } else {
             clickTimeout = setTimeout(() => {
+                setCurrent(idx);
                 navigate(`/photos/${photo.id}`);
                 clickTimeout = null;
             }, 250)
@@ -57,7 +61,7 @@ function PhotoCard({ photo }: PhotoCardProps) {
     }
 
     return (
-        <li className="photo-card" onClick={handleClick}>
+        <li className="photo-card" id={`photo-${idx}`} onClick={handleClick} tabIndex={100 + idx} data-photo-id={photo.id}>
             <CachedPhoto photoId={photo.id} src={photo.thumb_url} />
             <div className="photo-actions">
                 <div className="photo-action like" onClick={handleLike}>
@@ -77,13 +81,20 @@ function PhotoCard({ photo }: PhotoCardProps) {
     )
 }
 
+
 interface PhotoGridProps {
     photos: Map<number, Photo>;
 }
 
 function PhotoGrid({ photos }: PhotoGridProps) {
-    const { loadMorePhotos, scaleOption } = useGallery();
+    const { loadMorePhotos, scaleOption, index, current } = useGallery();
     const sentinelRef = useRef<HTMLDivElement | null>(null);
+    const listRef = useRef<HTMLOListElement | null>(null);
+
+    useEffect(() => {
+        const el = document.querySelector(`#photo-${current}`) as HTMLElement | null;
+        el?.focus();
+    }, [index, current]);
 
     useEffect(() => {
         const sentinel = sentinelRef.current;
@@ -104,12 +115,13 @@ function PhotoGrid({ photos }: PhotoGridProps) {
 
     return (
         <>
-            <ol className="photogrid" style={{ "--scale": scaleOption.id } as CSSProperties}>
-                {
-                    [...photos.values()].map(photo => (
-                        <PhotoCard key={photo.id} photo={photo} />
-                    ))
-                }
+            <ol className="photogrid" ref={listRef} style={{ "--scale": scaleOption.id } as CSSProperties}>
+                {[...photos.values()].map((photo, idx) => {
+
+                    return (
+                        <PhotoCard key={photo.id} photo={photo} idx={idx} />
+                    );
+                })}
             </ol>
             <div ref={sentinelRef} style={{ height: "1px" }} />
         </>
@@ -320,6 +332,9 @@ interface GalleryContextValue {
     setScaleOption: (opt: ScaleOption) => void;
     searchQuery: string;
     setSearchQuery: (q: string) => void;
+    index: number[] | undefined;
+    current: number | undefined;
+    setCurrent: (value: number) => void;
 };
 
 const GalleryContext = createContext<GalleryContextValue | null>(null);
@@ -340,8 +355,16 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     const [hasMore, setHasMore] = useState<boolean>(true);
     const [loading, setLoading] = useState<boolean>(false);
 
+    const [index, setIndex] = useLocalStorage<number[]>("index", []);
+    const [current, setCurrent] = useLocalStorage<number | undefined>("current", undefined);
+
     const defaultSort = sortOptions[0];
     const [sortOption, setSortOption] = useState<SortOption>(defaultSort);
+
+    useEffect(() => {
+        const idx = [...photos.values()].map(photo => photo.id);
+        setIndex(idx);
+    }, [photos]);
 
     const defaultScale = scaleOptions[2];
     const [scaleOption, setScaleOption] = useState<ScaleOption>(defaultScale);
@@ -402,7 +425,7 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto, loadMorePhotos, sortOption, setSortOption, scaleOption, setScaleOption, searchQuery, setSearchQuery }}>
+        <GalleryContext.Provider value={{ photos, updatePhoto, deletePhoto, loadMorePhotos, sortOption, setSortOption, scaleOption, setScaleOption, searchQuery, setSearchQuery, index, current, setCurrent }}>
             {children}
         </GalleryContext.Provider>
     );
